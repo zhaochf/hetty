@@ -2,5 +2,17 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/java-6-openjdk-i386"/>
+	<classpathentry kind="lib" path="lib/asm-4.0.jar"/>
+	<classpathentry kind="lib" path="lib/asm-util-4.0.jar"/>
+	<classpathentry kind="lib" path="lib/hessian-4.0.7.jar"/>
+	<classpathentry kind="lib" path="lib/logback-classic-1.0.0.jar"/>
+	<classpathentry kind="lib" path="lib/logback-core-1.0.0.jar"/>
+	<classpathentry kind="lib" path="lib/netty-3.5.1.Final.jar"/>
+	<classpathentry kind="lib" path="lib/reflectasm-1.05.jar"/>
+	<classpathentry kind="lib" path="lib/slf4j-api-1.6.4.jar"/>
+	<classpathentry kind="lib" path="lib/commons-codec-1.6.jar"/>
+	<classpathentry kind="lib" path="lib/dom4j-1.6.1.jar"/>
+	<classpathentry kind="lib" path="lib/ezmorph-1.0.6.jar"/>
+	<classpathentry kind="lib" path="lib/jaxen-1.1-beta-6.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

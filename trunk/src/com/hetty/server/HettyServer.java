@@ -18,7 +18,9 @@ import org.slf4j.LoggerFactory;
 
 import com.hetty.object.AppServiceSecurity;
 import com.hetty.object.Application;
-
+import com.hetty.object.Service;
+import com.hetty.server.conf.ServerConfig;
+import com.hetty.server.conf.ServerConfigManager;
 
 public class HettyServer {
 	private final static Logger logger = LoggerFactory
@@ -34,36 +36,24 @@ public class HettyServer {
 	private String host;
 	private int port;
 
-	private int httpPort;
-
-	public int getHttpPort() {
-		return httpPort;
-	}
-
-	public void setHttpPort(int httpPort) {
-		this.httpPort = httpPort;
-	}
-
 	private int connectionTimeout = 3000;
 
 	private int methodTimeout = 3000;
-
 
 	private String configFile = null;
 
 	public HettyServer(String configFile) {
 
-		ThreadFactory serverBossTF = new NamedThreadFactory("HXBCS-BOSS-");
-		ThreadFactory serverWorkerTF = new NamedThreadFactory("HXBCS-WORKER-");
+		ThreadFactory serverBossTF = new NamedThreadFactory("HETTY-BOSS-");
+		ThreadFactory serverWorkerTF = new NamedThreadFactory("HETTY-WORKER-");
 		bootstrap = new ServerBootstrap(new NioServerSocketChannelFactory(
 				Executors.newCachedThreadPool(serverBossTF),
 				Executors.newCachedThreadPool(serverWorkerTF)));
-		bootstrap.setOption("tcpNoDelay", Boolean.parseBoolean(System
-				.getProperty("bcs.rpc.tcp.nodelay", "true")));
-		bootstrap.setOption("reuseAddress", Boolean.parseBoolean(System
-				.getProperty("bcs.rpc.tcp.reuseaddress", "true")));
+		bootstrap.setOption("tcpNoDelay", Boolean.parseBoolean(ServerConfig.getInstance()
+				.getProperty("hetty.tcp.nodelay", "true")));
+		bootstrap.setOption("reuseAddress", Boolean.parseBoolean(ServerConfig.getInstance()
+				.getProperty("hetty.tcp.reuseaddress", "true")));
 		this.configFile = configFile;
-		
 
 	}
 
@@ -75,15 +65,12 @@ public class HettyServer {
 		this("server.properties");
 	}
 
-
 	public void start() throws Exception {
-		ThreadFactory tf = new NamedThreadFactory("bcspool-");
+		ThreadFactory tf = new NamedThreadFactory("hetty-pool-");
 		int minSize = Runtime.getRuntime().availableProcessors();
 		int maxSize = minSize * 100;
 		ExecutorService threadPool = new ThreadPoolExecutor(minSize, maxSize,
-				3000, TimeUnit.SECONDS,
-				new SynchronousQueue<Runnable>(), tf);
-		// ExecutorService threadPool = Executors.newCachedThreadPool(tf);
+				3000, TimeUnit.SECONDS, new SynchronousQueue<Runnable>(), tf);
 		start(threadPool);
 	}
 
@@ -91,47 +78,23 @@ public class HettyServer {
 		if (!startFlag.compareAndSet(false, true)) {
 			return;
 		}
-
-		/*Plugin hessianPlugin = new HessianServiceConfig();
-		this.registerPlugin(hessianPlugin);
-
-		Plugin localSecurityPlugin = new LocalServerSecurityPlugin();
-		this.registerPlugin(localSecurityPlugin);
-
-		if (messageEnable) {
-			Plugin msgPlugin = new MessageServer(threadPool);
-			this.registerPlugin(msgPlugin);
-			Plugin mssp = new MessageSendServicePlugin();
-			this.registerPlugin(mssp);
-		}*/
-/*		bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
-			public ChannelPipeline getPipeline() throws Exception {
-				ChannelPipeline pipeline = new DefaultChannelPipeline();
-				pipeline.addLast("decoder", new RpcDecoder());
-				pipeline.addLast("encoder", new RpcEncoder());
-				pipeline.addLast("handler", new ServerHandler(threadPool));
-				return pipeline;
-			}
-		});*/
+		ServerConfig.getInstance().loadProperties("server.properties");
+		ServerConfigManager scm = new ServerConfigManager();
+		scm.init(this);
+		HessianServiceConfig hsc = new HessianServiceConfig();
+		hsc.init(this);
 
 		ServerBootstrap httpBootstrap = new ServerBootstrap(
 				new NioServerSocketChannelFactory(
 						Executors.newCachedThreadPool(),
 						Executors.newCachedThreadPool()));
-		httpBootstrap.setPipelineFactory(new HessianChannelPipelineFactory(threadPool));
+		httpBootstrap.setPipelineFactory(new HessianChannelPipelineFactory(
+				threadPool));
 
-		// 初始化插件
-		/*
-		 * for (Plugin p : pluginList) { p.init(this); }
-		 */
+		port = ServerConfig.getInstance().getPort();
 
-		bootstrap.bind(new InetSocketAddress(port));
-		logger.info("Server started,socket listen at: " + port);
-		if (httpPort > 0) {
-			httpBootstrap.bind(new InetSocketAddress(httpPort));
-			logger.info("Server started,http listen at: " + httpPort);
-		}
-		// httpServer.start();
+		httpBootstrap.bind(new InetSocketAddress(port));
+		logger.info("Server started,http listen at: " + port);
 
 	}
 
@@ -169,14 +132,10 @@ public class HettyServer {
 		return ass;
 	}
 
-
-
 	public static Map<String, AppServiceSecurity> getAppServiceSecurityMap() {
 		return appServiceSecurityMap;
 	}
 
-
-	
 	public Map<String, Application> getApplicationMap() {
 		return applicationMap;
 	}
@@ -193,10 +152,9 @@ public class HettyServer {
 		return app;
 	}
 
-	
 	public void stop() throws Exception {
 		logger.warn("Server stop!");
-	
+
 		bootstrap.releaseExternalResources();
 		startFlag.set(false);
 	}
@@ -233,21 +191,50 @@ public class HettyServer {
 		this.methodTimeout = methodTimeout;
 	}
 
-	public static void main(String[] args){
-		String config=System.getProperty("config");
-		if(config==null){
-			config="server.properties";
+	public void registerService(Service service) {
+		ServiceHandlerFactory.registerService(service);
+	}
+
+	public static Service getService(String name) {
+		return ServiceHandlerFactory.getService(name);
+	}
+
+	public static Map<String, Service> getServiceMap() {
+		return ServiceHandlerFactory.getServiceMap();
+	}
+
+	public static void main(String[] args) {
+		String config = System.getProperty("config");
+		if (config == null) {
+			config = "server.properties";
 		}
 		HettyServer server = new HettyServer(config);
-		
+
 		ThreadFactory tf = new NamedThreadFactory("bc-");
 		ExecutorService threadPool = new ThreadPoolExecutor(20, 100, 3000,
 				TimeUnit.SECONDS, new SynchronousQueue<Runnable>(), tf);
-		//启动服务器
+		// 启动服务器
 		try {
 			server.start(threadPool);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
+
+	public static Application getCurrentApp() {
+		return currentApp;
+	}
+
+	public static void setCurrentApp(Application currentApp) {
+		HettyServer.currentApp = currentApp;
+	}
+
+	public static Map<String, Application> getApplicationmap() {
+		return applicationMap;
+	}
+
+	public static Map<String, AppServiceSecurity> getAppservicesecuritymap() {
+		return appServiceSecurityMap;
+	}
+
 }

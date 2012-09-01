@@ -2,7 +2,7 @@ package com.hetty.object;
 
 import java.io.Serializable;
 
-public abstract class BcService implements Serializable{
+public abstract class Service implements Serializable{
 
 	private static final long serialVersionUID = 2351769180636491630L;
 	
@@ -21,11 +21,11 @@ public abstract class BcService implements Serializable{
 	
 	
 	
-	public BcService(){
+	public Service(){
 		
 	}
 	
-	public BcService(String id,String name){
+	public Service(String id,String name){
 		this.id=id;
 		this.name = name;
 	}

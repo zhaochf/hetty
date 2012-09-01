@@ -3,7 +3,7 @@ package com.hetty.object;
 import java.util.HashMap;
 import java.util.Map;
 
-public class LocalService extends BcService {
+public class LocalService extends Service {
 
 	private static final long serialVersionUID = -7977353532368464473L;
 
@@ -27,7 +27,7 @@ public class LocalService extends BcService {
 	
 	@Override
 	public int getType() {
-		return BcService.TYPE_LOCAL;
+		return Service.TYPE_LOCAL;
 	}
 	
 	public Class<?> getProcessorClass(int v) {
