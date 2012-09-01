@@ -1,0 +1,367 @@
+package com.hetty.server;
+
+import static org.jboss.netty.handler.codec.http.HttpHeaders.isKeepAlive;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
+import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.concurrent.ExecutorService;
+
+import org.apache.commons.codec.binary.Base64;
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.buffer.ChannelBuffers;
+import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.channel.ChannelFutureListener;
+import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.ExceptionEvent;
+import org.jboss.netty.channel.MessageEvent;
+import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
+import org.jboss.netty.handler.codec.http.HttpHeaders;
+import org.jboss.netty.handler.codec.http.HttpRequest;
+import org.jboss.netty.handler.codec.http.HttpResponse;
+import org.jboss.netty.handler.codec.http.HttpResponseStatus;
+import org.jboss.netty.util.CharsetUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.caucho.hessian.io.AbstractHessianInput;
+import com.caucho.hessian.io.AbstractHessianOutput;
+import com.caucho.hessian.io.Hessian2Input;
+import com.caucho.hessian.io.HessianFactory;
+import com.caucho.hessian.io.HessianInputFactory;
+import com.caucho.hessian.io.SerializerFactory;
+import com.hetty.RequestWrapper;
+import com.hetty.protocol.ProtocolUtils;
+
+public class HessianProtocolHandler extends SimpleChannelUpstreamHandler {
+	private final Logger log = LoggerFactory
+			.getLogger(HessianProtocolHandler.class);
+	private HttpRequest request;
+	private boolean readingChunks;
+	private final StringBuilder buf = new StringBuilder();
+	private HessianInputFactory _inputFactory = new HessianInputFactory();
+	private HessianFactory _hessianFactory = new HessianFactory();
+
+	private SerializerFactory _serializerFactory;
+	private ExecutorService threadpool;
+
+	public HessianProtocolHandler(ExecutorService threadpool){
+		this.threadpool=threadpool;
+	}
+
+	@Override
+	public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
+			throws Exception {
+		if (!readingChunks) {
+			ByteArrayOutputStream os = new ByteArrayOutputStream();
+			HttpRequest request = this.request = (HttpRequest) e.getMessage();
+			HttpResponse response = new DefaultHttpResponse(HTTP_1_1,
+					HttpResponseStatus.OK);
+
+			//HttpChunk chunk=(HttpChunk)e.getMessage();
+
+			String uri = request.getUri();
+			//String clientHost = getHost(request, "unknown");
+			// System.out.println("URI:" + uri);
+			// System.out.println("ClientHost:" + clientHost);
+			if (!uri.startsWith("/apis/")) {
+				sendResourceNotFound(ctx, e);
+				return;
+			}
+			if(uri.endsWith("/")){
+				uri=uri.substring(0,uri.length()-1);
+			}
+			
+			String serviceName=uri.substring(uri.lastIndexOf("/")+1);
+			
+			handleService(serviceName,request,response,os,e);
+		}
+	}
+	
+	private void handleService(final String serviceName,final HttpRequest request,final HttpResponse response,final ByteArrayOutputStream os,final MessageEvent e)throws Exception{
+		threadpool.execute(new Runnable() {
+			
+			@Override
+			public void run() {
+				try {
+					service(serviceName,request, response, os);
+				} catch (IOException e1) {
+					throw new RuntimeException(e1);
+				}
+				if (HttpHeaders.is100ContinueExpected(request)) {
+					send100Continue(e);
+				}
+				if (request.isChunked()) {
+					readingChunks = true;
+				} else {
+					writeResponse(e, response, os);
+				}
+				
+			}
+		});
+		
+	}
+
+	private void writeResponse(MessageEvent e, HttpResponse response,
+			ByteArrayOutputStream os) {
+
+		boolean keepAlive = isKeepAlive(request);
+		ChannelBuffer cb = ChannelBuffers.dynamicBuffer();
+		cb.writeBytes(os.toByteArray());
+		response.setContent(cb);
+
+		if (keepAlive) { 
+			response.setHeader(CONTENT_LENGTH, response.getContent()
+					.readableBytes());
+		}
+
+		ChannelFuture future = e.getChannel().write(response);
+
+	
+		if (!keepAlive) {
+			future.addListener(ChannelFutureListener.CLOSE);
+		}
+	}
+
+	private void send100Continue(MessageEvent e) {
+		HttpResponse response = new DefaultHttpResponse(HTTP_1_1, CONTINUE);
+		ChannelBuffer content1 = request.getContent();
+		if (content1.readable()) {
+			buf.append(content1.toString(CharsetUtil.UTF_8));
+		}
+		ChannelFuture future = e.getChannel().write(response);
+		boolean keepAlive = isKeepAlive(request);
+		
+		if (!keepAlive) {
+			future.addListener(ChannelFutureListener.CLOSE);
+		}
+	}
+
+	/**
+	 * Sets the serializer factory.
+	 */
+	public void setSerializerFactory(SerializerFactory factory) {
+		_serializerFactory = factory;
+	}
+
+	/**
+	 * Gets the serializer factory.
+	 */
+	public SerializerFactory getSerializerFactory() {
+		if (_serializerFactory == null)
+			_serializerFactory = new SerializerFactory();
+
+		return _serializerFactory;
+	}
+
+	/**
+	 * Execute a request. The path-info of the request selects the bean. Once
+	 * the bean's selected, it will be applied.
+	 */
+	public void service(String servicName,HttpRequest req, HttpResponse res,
+			ByteArrayOutputStream os) throws IOException {
+		try {
+			byte[] bytes = req.getContent().array();
+			InputStream is = new ByteArrayInputStream(bytes);
+
+			SerializerFactory serializerFactory = getSerializerFactory();
+			String username=null;
+			String password=null;
+			String[] authLink=getUsernameAndPassword(req);
+			username=authLink[0];
+			password=authLink[1];
+			invoke(username,password,servicName,is, os, serializerFactory);
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+
+		}
+	}
+	
+	private String[] getUsernameAndPassword(HttpRequest req){
+		String auths=request.getHeader("Authorization");
+		String auth[] =auths.split(" ");
+		String bauth=auth[1];
+		String dauth=new String(Base64.decodeBase64(bauth));
+		String authLink[]=dauth.split(":");
+		return authLink;
+	}
+
+	protected void invoke(String username,String password,String sname,InputStream is, OutputStream os,
+			SerializerFactory serializerFactory) throws Exception {
+		HessianInputFactory.HeaderType header = _inputFactory.readHeader(is);
+
+		AbstractHessianInput in;
+		AbstractHessianOutput out;
+
+		switch (header) {
+		case CALL_1_REPLY_1:
+			in = _hessianFactory.createHessianInput(is);
+			out = _hessianFactory.createHessianOutput(os);
+			break;
+
+		case CALL_1_REPLY_2:
+			in = _hessianFactory.createHessianInput(is);
+			out = _hessianFactory.createHessian2Output(os);
+			break;
+
+		case HESSIAN_2:
+			in = _hessianFactory.createHessian2Input(is);
+			in.readCall();
+			out = _hessianFactory.createHessian2Output(os);
+			break;
+
+		default:
+			throw new IllegalStateException(header
+					+ " is an unknown Hessian call");
+		}
+
+		if (serializerFactory != null) {
+			in.setSerializerFactory(serializerFactory);
+			out.setSerializerFactory(serializerFactory);
+		}
+
+		try {
+			invoke(username,password,sname, in, out);
+		}  finally {
+		
+				in.close();
+				out.close();
+			
+			
+
+		}
+	}
+
+	public void invoke(String username,String password,String serviceName, AbstractHessianInput in,
+			AbstractHessianOutput out) throws Exception {
+		ServiceContext context = ServiceContext.getContext();
+
+		// backward compatibility for some frameworks that don't read
+		// the call type first
+		in.skipOptionalCall();
+
+		// Hessian 1.0 backward compatibility
+		String header;
+		while ((header = in.readHeader()) != null) {
+			Object value = in.readObject();
+
+			context.addHeader(header, value);
+		}
+		ServiceMetaData smd=HessianServiceConfig.getServiceMetaData(serviceName);
+		
+		
+
+		String methodName = in.readMethod();
+		int argLength = in.readMethodArgLength();
+		
+		Method method = smd.getMethod(methodName + "__" + argLength);
+		
+		if (method == null){
+		      method = smd.getMethod(methodName);
+		}
+		Class<?>[] argTypes = method.getParameterTypes();
+		Object[] argObjs = new Object[argTypes.length];
+		for (int i = 0; i < argTypes.length; i++) {
+			argObjs[i] = in.readObject(argTypes[i]);
+		}
+
+		int timeout = 3000;
+		
+		
+		
+		/*byte[][] args=new byte[argObjs.length][];
+		for(int i=0;i<argObjs.length;i++){
+			args[i]=ProtocolUtils.encode(argObjs[i]);
+		}*/
+		RequestWrapper rw = new RequestWrapper(username, password, serviceName,
+				method.getName(), argObjs, timeout);
+
+		
+
+		if (argLength != argObjs.length && argLength >= 0) {
+			out.writeFault("NoSuchMethod",
+					"method " + method
+							+ " argument length mismatch, received length="
+							+ argLength, null);
+			out.close();
+			return;
+		}
+
+		Object result = null;
+
+		try {
+			result = ServiceHandlerFactory.handleRequest(rw);
+			//result=ProtocolUtils.decode(bytes);
+		} catch (Exception e) {
+			Throwable e1 = e;
+			if (e1 instanceof InvocationTargetException)
+				e1 = ((InvocationTargetException) e).getTargetException();
+
+			log.debug(this + " " + e1.toString(), e1);
+
+			out.writeFault("ServiceException", e1.getMessage(), e1);
+			out.close();
+			return;
+		}
+
+		// The complete call needs to be after the invoke to handle a
+		// trailing InputStream
+		in.completeCall();
+
+		out.writeReply(result);
+
+		out.close();
+	}
+	
+	protected Hessian2Input createHessian2Input(InputStream is) {
+		return new Hessian2Input(is);
+	}
+
+	private void sendResourceNotFound(ChannelHandlerContext ctx, MessageEvent e) {
+		HttpResponse response = new DefaultHttpResponse(HTTP_1_1,
+				HttpResponseStatus.NOT_FOUND);
+		response.setContent(ChannelBuffers.copiedBuffer("NOT FOUND!",
+				CharsetUtil.UTF_8));
+		response.setHeader(CONTENT_TYPE, "text/plain; charset=UTF-8");
+
+		// Close the connection as soon as the error message is sent.
+		ctx.getChannel().write(response)
+				.addListener(ChannelFutureListener.CLOSE);
+	}
+
+	@Override
+	public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
+			throws Exception {
+		HttpResponse response = new DefaultHttpResponse(HTTP_1_1,
+				HttpResponseStatus.INTERNAL_SERVER_ERROR);
+		response.setHeader(CONTENT_TYPE, "text/html; charset=UTF-8");
+		StringBuilder sb = new StringBuilder();
+		sb.append("<b>500 Server Error!</b><hr>");
+		String msg = e.getCause().getMessage();
+		StackTraceElement[] ste = e.getCause().getStackTrace();
+		sb.append(msg);
+		sb.append("<br>");
+		for (StackTraceElement es : ste) {
+			sb.append(es.toString() + "<br>");
+		}
+		response.setContent(ChannelBuffers.copiedBuffer(sb.toString(),
+				CharsetUtil.UTF_8));
+
+		// Close the connection as soon as the error message is sent.
+		ctx.getChannel().write(response)
+				.addListener(ChannelFutureListener.CLOSE);
+
+		e.getCause().printStackTrace();
+		e.getChannel().close();
+	}
+}
