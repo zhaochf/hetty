@@ -5,11 +5,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 
 import com.hetty.RequestWrapper;
-import com.hetty.object.BcService;
+import com.hetty.object.Service;
 
 
 public class ServiceHandlerFactory {
-	private final static Map<String, BcService> serviceObjectMap = new ConcurrentHashMap<String, BcService>();
+	private final static Map<String, Service> serviceObjectMap = new ConcurrentHashMap<String, Service>();
 	
 	private ServiceHandlerFactory() {
 
@@ -18,7 +18,7 @@ public class ServiceHandlerFactory {
 	public static ServiceHandler getServiceHandler(RequestWrapper request) {
 		
 		String sname = request.getServiceName();
-		BcService so = getService(sname);
+		Service so = getService(sname);
 		if(so==null){
 			throw new RuntimeException("Service【"+sname+"】不存在！");
 		}
@@ -41,18 +41,18 @@ public class ServiceHandlerFactory {
 		return rw;
 	}
 
-	public static void registerService(BcService so) {
+	public static void registerService(Service so) {
 		serviceObjectMap.put(so.getName(), so);
-		if(so.getType()==BcService.TYPE_LOCAL){
+		if(so.getType()==Service.TYPE_LOCAL){
 			LocalServiceHandler.publishService(so);
 		}
 	}
 
-	public static BcService getService(String name) {
+	public static Service getService(String name) {
 		return serviceObjectMap.get(name);
 	}
 	
-	public static Map<String, BcService> getServiceMap(){
+	public static Map<String, Service> getServiceMap(){
 		return serviceObjectMap;
 	}
 

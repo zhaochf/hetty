@@ -13,7 +13,7 @@ import com.esotericsoftware.reflectasm.MethodAccess;
 import com.hetty.RequestWrapper;
 import com.hetty.object.AppServiceSecurity;
 import com.hetty.object.Application;
-import com.hetty.object.BcService;
+import com.hetty.object.Service;
 import com.hetty.object.LocalService;
 import com.hetty.object.ServiceProvider;
 import com.hetty.protocol.ProtocolUtils;
@@ -73,7 +73,7 @@ public class LocalServiceHandler implements ServiceHandler {
 		return result;
 	}
 
-	public static void publishService(BcService so) {
+	public static void publishService(Service so) {
 		String instanceName = so.getName();
 		LocalService lso = (LocalService) so;
 		Map<String, ServiceProvider> vmap = lso.getServiceProviderMap();

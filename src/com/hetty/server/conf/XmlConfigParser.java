@@ -1,0 +1,177 @@
+package com.hetty.server.conf;
+
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+
+import org.dom4j.Document;
+import org.dom4j.DocumentException;
+import org.dom4j.Element;
+import org.dom4j.Node;
+import org.dom4j.io.SAXReader;
+
+import com.hetty.object.AppServiceSecurity;
+import com.hetty.object.Application;
+import com.hetty.object.LocalService;
+import com.hetty.object.Service;
+import com.hetty.object.ServiceProvider;
+
+public class XmlConfigParser implements ConfigParser {
+	private String configFile = null;
+	private Document document;
+	private Element root = null;
+
+	public XmlConfigParser(String configFile) {
+		this.configFile = configFile;
+		root = getRoot();
+	}
+
+
+
+	/* (non-Javadoc)
+	 * @see com.hxrainbow.bcs.server.ConfigParser#parseService()
+	 */
+	@Override
+	@SuppressWarnings("unchecked")
+	public List<Service> parseService() {
+		List<Service> slist = new ArrayList<Service>();
+
+		try {
+			Node serviceRoot = root.selectSingleNode("//services");
+
+			List<Element> serviceList = serviceRoot.selectNodes("//service");
+
+			int i = 0;
+			for (Element serviceNode : serviceList) {
+				String name = serviceNode.attributeValue("name");
+				String interfaceStr = serviceNode.attributeValue("interface");
+				Class<?> type = Class.forName(interfaceStr);
+
+				String servers = serviceNode.attributeValue("servers");
+				if (servers == null) {
+					LocalService ls = new LocalService("" + i, name);
+					ls.setTypeClass(type);
+					List<Element> versionList = serviceNode
+							.selectNodes("provider");
+					for (Element ve : versionList) {
+						String vname = ve.attributeValue("version");
+						String processor = ve.attributeValue("class");
+						String isDefault = ve.attributeValue("default");
+						Class<?> pclass = Class.forName(processor);
+						ServiceProvider sv = new ServiceProvider(vname, pclass);
+						if (isDefault != null
+								&& "true".equals(isDefault.trim())) {
+							ls.addDefaultVersion(sv);
+						} else {
+							ls.addProvider(sv);
+						}
+					}
+					slist.add(ls);
+				} 
+				i++;
+
+			}
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+
+		return slist;
+	}
+
+	
+	/* (non-Javadoc)
+	 * @see com.hxrainbow.bcs.server.ConfigParser#parseApplication()
+	 */
+	@Override
+	@SuppressWarnings("unchecked")
+	public List<Application> parseApplication() {
+		List<Application> alist = new LinkedList<Application>();
+		Element aroot = getRoot();
+		Node root = aroot.selectSingleNode("//applications");
+		List<Element> appList = root.selectNodes("application");
+		for (Element e : appList) {
+			String key = e.attributeValue("appKey");
+			String secret = e.attributeValue("appSecret");
+			String name = e.attributeValue("appName");
+			Application app = new Application();
+			app.setKey(key);
+			app.setSecret(secret);
+			app.setName(name);
+			alist.add(app);
+		}
+		return alist;
+	}
+
+	/* (non-Javadoc)
+	 * @see com.hxrainbow.bcs.server.ConfigParser#parseSecurity()
+	 */
+	@Override
+	@SuppressWarnings("unchecked")
+	public List<Object> parseSecurity() {
+		List<Object> olist = new LinkedList<Object>();
+		Element aroot = getRoot();
+		Node root = aroot.selectSingleNode("//security-settings");
+		List<Element> sList = root.selectNodes("security-setting");
+		for (Element se : sList) {
+			String appKey = se.attributeValue("appKey");
+			String sname = se.attributeValue("service");
+			if (null != sname) {
+				String version = se.attributeValue("version");
+				if (version == null) {
+					version = "0";
+				}
+				AppServiceSecurity ass = new AppServiceSecurity();
+				ass.setApplicationKey(appKey);
+				ass.setServiceName(sname);
+				ass.setServiceVersion(version);
+				olist.add(ass);
+			}
+		}
+		return olist;
+	}
+
+	@SuppressWarnings("unchecked")
+	private Element getRoot() {
+		try {
+			Document doc = getDocument();
+			List<Element> list = doc.selectNodes("//deployment");
+			if (list.size() > 0) {
+				Element aroot = list.get(0);
+				return aroot;
+			}
+		} catch (DocumentException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	private Document getDocument() throws DocumentException {
+		if (document == null) {
+			SAXReader reader = new SAXReader();
+			reader.setValidation(false);
+			InputStream is = getFileStream();
+			if (is == null) {
+				throw new RuntimeException("没有找到配置文件 " + configFile);
+			}
+			document = reader.read(is);
+		}
+		return document;
+	}
+
+	private InputStream getFileStream() {
+		return getFileStream(configFile);
+	}
+
+	private InputStream getFileStream(String file) {
+		InputStream is = Thread.currentThread().getContextClassLoader()
+				.getResourceAsStream(file);
+		return is;
+	}
+
+	public static void main(String[] args) {
+		ConfigParser cp = new XmlConfigParser("config.xml");
+		//cp.parseMessage();
+	}
+
+}

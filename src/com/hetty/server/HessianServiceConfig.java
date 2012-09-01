@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import com.hetty.object.BcService;
+import com.hetty.object.Service;
 
 
 public class HessianServiceConfig  {
@@ -12,11 +12,11 @@ public class HessianServiceConfig  {
 	private static Map<String, ServiceMetaData> hessianServiceMetaMap = new HashMap<String, ServiceMetaData>();
 
 	public void init(HettyServer server) {
-		Map<String, BcService> serviceMap = ServiceHandlerFactory
+		Map<String, Service> serviceMap = ServiceHandlerFactory
 				.getServiceMap();
 		Set<String> serviceNames = serviceMap.keySet();
 		for (String sn : serviceNames) {
-			BcService bs = serviceMap.get(sn);
+			Service bs = serviceMap.get(sn);
 			Class<?> tc = bs.getTypeClass();
 			ServiceMetaData smd = new ServiceMetaData(tc);
 			hessianServiceMetaMap.put(sn, smd);
