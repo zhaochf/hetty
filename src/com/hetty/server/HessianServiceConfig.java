@@ -5,13 +5,14 @@ import java.util.Map;
 import java.util.Set;
 
 import com.hetty.object.Service;
+import com.hetty.plugin.Plugin;
 
 
-public class HessianServiceConfig  {
+public class HessianServiceConfig  implements Plugin{
 
 	private static Map<String, ServiceMetaData> hessianServiceMetaMap = new HashMap<String, ServiceMetaData>();
 
-	public void init(HettyServer server) {
+	public void start(HettyServer server) {
 		Map<String, Service> serviceMap = ServiceHandlerFactory
 				.getServiceMap();
 		Set<String> serviceNames = serviceMap.keySet();

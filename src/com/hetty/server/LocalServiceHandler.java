@@ -18,7 +18,6 @@ import com.hetty.object.LocalService;
 import com.hetty.object.ServiceProvider;
 import com.hetty.protocol.ProtocolUtils;
 
-
 public class LocalServiceHandler implements ServiceHandler {
 	private final static Logger logger = LoggerFactory
 			.getLogger(LocalServiceHandler.class);
@@ -29,8 +28,6 @@ public class LocalServiceHandler implements ServiceHandler {
 	public Object handleRequest(RequestWrapper request) {
 		String instanceName = request.getServiceName();
 		String methodName = request.getMethodName();
-
-		
 
 		LocalService so = (LocalService) ServiceHandlerFactory
 				.getService(instanceName);
@@ -43,21 +40,17 @@ public class LocalServiceHandler implements ServiceHandler {
 				: requestVersion;
 		ServiceProvider sv = so.getVersion(versionValue);
 		Class<?> processorClass = sv.getProcessorClass();
-		Object result=null;
+		Object result = null;
 		try {
 			Object processor = processorClass.newInstance();
 			Object[] args = request.getArgs();
-			
-			
 
-				MethodAccess method = cacheMethodAccess.get(instanceName).get(
-						versionValue);
-				int methodIndex = method.getIndex(methodName);
+			MethodAccess method = cacheMethodAccess.get(instanceName).get(
+					versionValue);
+			int methodIndex = method.getIndex(methodName);
 
-				result = method.invoke(processor, methodIndex, args);
-				
-				
-			
+			result = method.invoke(processor, methodIndex, args);
+
 		} catch (InstantiationException e) {
 			e.printStackTrace();
 			throw new RuntimeException(e);
@@ -68,7 +61,7 @@ public class LocalServiceHandler implements ServiceHandler {
 		} catch (IllegalArgumentException e) {
 			e.printStackTrace();
 			throw new RuntimeException(e);
-		} 
+		}
 
 		return result;
 	}
@@ -105,7 +98,8 @@ public class LocalServiceHandler implements ServiceHandler {
 		if (!appSecret.equals(app.getSecret())) {
 			throw new RuntimeException("应用【" + appKey + "】密码错误！");
 		}
-		AppServiceSecurity ass = HettyServer.getAppServiceSecurity(appKey, serviceName);
+		AppServiceSecurity ass = HettyServer.getAppServiceSecurity(appKey,
+				serviceName);
 		String requestVersion = ass.getServiceVersion();
 		return requestVersion;
 	}

@@ -4,7 +4,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
+import java.util.Set;
+
 
 public class ServerConfig {
 	private static Properties config = new Properties();
@@ -13,7 +17,26 @@ public class ServerConfig {
 	private ServerConfig() {
 
 	}
+	public List<Class<?>> getPluginClassList() {
+		
+		Set<String> keySet = config.stringPropertyNames();
+		List<Class<?>> list = new ArrayList<Class<?>>();
+		for (String key : keySet) {
+			if (key.startsWith("server.plugin")) {
+				String cls = config.getProperty(key);
+				try {
+					ClassLoader cl = Thread.currentThread()
+							.getContextClassLoader();
+					Class<?> cls1 = cl.loadClass(cls);
 
+					list.add(cls1);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		return list;
+	}
 	
 
 	public String getServerKey() {
