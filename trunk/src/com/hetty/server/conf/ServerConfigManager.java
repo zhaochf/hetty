@@ -3,15 +3,13 @@ package com.hetty.server.conf;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-
-import com.hetty.object.AppMessageSecurity;
 import com.hetty.object.AppServiceSecurity;
 import com.hetty.object.Application;
 import com.hetty.object.Service;
+import com.hetty.plugin.Plugin;
 import com.hetty.server.HettyServer;
 
-public class ServerConfigManager {
+public class ServerConfigManager implements Plugin{
 	
 	private final static Map<String,Application> applicationMap=new HashMap<String, Application>();
 	
@@ -28,7 +26,7 @@ public class ServerConfigManager {
 		}
 	}
 	
-	public void init(HettyServer server) {
+	public void start(HettyServer server) {
 		ServerConfig sc=ServerConfig.getInstance().loadProperties(configFile);
 		String xmlfile=sc.getConfigFile();
 		ConfigParser cp=new XmlConfigParser(xmlfile);
@@ -40,7 +38,7 @@ public class ServerConfigManager {
 		app.setName(sc.getServerName());
 		
 		//.parseCurrentApp(server);
-		server.setCurrentApp(app);
+		HettyServer.setCurrentApp(app);
 		
 		
 		List<Service> serviceList=cp.parseService();
@@ -48,8 +46,7 @@ public class ServerConfigManager {
 			server.registerService(bs);
 		}
 		
-		
-		
+		ServerConfig.getInstance();
 		List<Application> appList=cp.parseApplication();
 		for(Application a:appList){
 			server.addApplication(a);

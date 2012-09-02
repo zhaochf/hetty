@@ -2,6 +2,7 @@ package com.hetty.server;
 
 import java.net.InetSocketAddress;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -19,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import com.hetty.object.AppServiceSecurity;
 import com.hetty.object.Application;
 import com.hetty.object.Service;
+import com.hetty.plugin.Plugin;
 import com.hetty.server.conf.ServerConfig;
 import com.hetty.server.conf.ServerConfigManager;
 
@@ -78,11 +80,21 @@ public class HettyServer {
 		if (!startFlag.compareAndSet(false, true)) {
 			return;
 		}
-		ServerConfig.getInstance().loadProperties("server.properties");
-		ServerConfigManager scm = new ServerConfigManager();
-		scm.init(this);
-		HessianServiceConfig hsc = new HessianServiceConfig();
-		hsc.init(this);
+		
+		ServerConfig sc=ServerConfig.getInstance();
+		
+		sc.loadProperties("server.properties");
+		
+		Plugin scm = new ServerConfigManager();
+		this.registerPlugin(scm);
+		Plugin hsc = new HessianServiceConfig();
+		this.registerPlugin(hsc);
+		
+		List<Class<?>> pluginList=sc.getPluginClassList();
+		for(Class<?> cls:pluginList){
+			Plugin p=(Plugin)cls.newInstance();
+			p.start(this);
+		}
 
 		ServerBootstrap httpBootstrap = new ServerBootstrap(
 				new NioServerSocketChannelFactory(
@@ -91,7 +103,7 @@ public class HettyServer {
 		httpBootstrap.setPipelineFactory(new HessianChannelPipelineFactory(
 				threadPool));
 
-		port = ServerConfig.getInstance().getPort();
+		port = sc.getPort();
 
 		httpBootstrap.bind(new InetSocketAddress(port));
 		logger.info("Server started,http listen at: " + port);
@@ -210,7 +222,7 @@ public class HettyServer {
 		}
 		HettyServer server = new HettyServer(config);
 
-		ThreadFactory tf = new NamedThreadFactory("bc-");
+		ThreadFactory tf = new NamedThreadFactory("hetty-");
 		ExecutorService threadPool = new ThreadPoolExecutor(20, 100, 3000,
 				TimeUnit.SECONDS, new SynchronousQueue<Runnable>(), tf);
 		// 启动服务器
@@ -235,6 +247,10 @@ public class HettyServer {
 
 	public static Map<String, AppServiceSecurity> getAppservicesecuritymap() {
 		return appServiceSecurityMap;
+	}
+	
+	private void registerPlugin(Plugin p){
+		p.start(this);
 	}
 
 }

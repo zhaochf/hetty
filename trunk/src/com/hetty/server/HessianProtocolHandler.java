@@ -40,7 +40,6 @@ import com.caucho.hessian.io.HessianFactory;
 import com.caucho.hessian.io.HessianInputFactory;
 import com.caucho.hessian.io.SerializerFactory;
 import com.hetty.RequestWrapper;
-import com.hetty.protocol.ProtocolUtils;
 
 public class HessianProtocolHandler extends SimpleChannelUpstreamHandler {
 	private final Logger log = LoggerFactory
@@ -54,8 +53,8 @@ public class HessianProtocolHandler extends SimpleChannelUpstreamHandler {
 	private SerializerFactory _serializerFactory;
 	private ExecutorService threadpool;
 
-	public HessianProtocolHandler(ExecutorService threadpool){
-		this.threadpool=threadpool;
+	public HessianProtocolHandler(ExecutorService threadpool) {
+		this.threadpool = threadpool;
 	}
 
 	@Override
@@ -67,36 +66,34 @@ public class HessianProtocolHandler extends SimpleChannelUpstreamHandler {
 			HttpResponse response = new DefaultHttpResponse(HTTP_1_1,
 					HttpResponseStatus.OK);
 
-			//HttpChunk chunk=(HttpChunk)e.getMessage();
-
 			String uri = request.getUri();
-			//String clientHost = getHost(request, "unknown");
-			// System.out.println("URI:" + uri);
-			// System.out.println("ClientHost:" + clientHost);
 			if (!uri.startsWith("/apis/")) {
 				sendResourceNotFound(ctx, e);
 				return;
 			}
-			if(uri.endsWith("/")){
-				uri=uri.substring(0,uri.length()-1);
+			if (uri.endsWith("/")) {
+				uri = uri.substring(0, uri.length() - 1);
 			}
-			
-			String serviceName=uri.substring(uri.lastIndexOf("/")+1);
-			
-			handleService(serviceName,request,response,os,e);
+
+			String serviceName = uri.substring(uri.lastIndexOf("/") + 1);
+
+			handleService(serviceName, request, response, os, e);
 		}
 	}
-	
-	private void handleService(final String serviceName,final HttpRequest request,final HttpResponse response,final ByteArrayOutputStream os,final MessageEvent e)throws Exception{
+
+	private void handleService(final String serviceName,
+			final HttpRequest request, final HttpResponse response,
+			final ByteArrayOutputStream os, final MessageEvent e)
+			throws Exception {
 		threadpool.execute(new Runnable() {
-			
 			@Override
 			public void run() {
 				try {
-					service(serviceName,request, response, os);
-				} catch (IOException e1) {
-					throw new RuntimeException(e1);
+					service(serviceName, request, response, os);
+				} catch (Exception e1) {
+					e1.printStackTrace();
 				}
+
 				if (HttpHeaders.is100ContinueExpected(request)) {
 					send100Continue(e);
 				}
@@ -105,10 +102,10 @@ public class HessianProtocolHandler extends SimpleChannelUpstreamHandler {
 				} else {
 					writeResponse(e, response, os);
 				}
-				
+
 			}
 		});
-		
+
 	}
 
 	private void writeResponse(MessageEvent e, HttpResponse response,
@@ -119,14 +116,13 @@ public class HessianProtocolHandler extends SimpleChannelUpstreamHandler {
 		cb.writeBytes(os.toByteArray());
 		response.setContent(cb);
 
-		if (keepAlive) { 
+		if (keepAlive) {
 			response.setHeader(CONTENT_LENGTH, response.getContent()
 					.readableBytes());
 		}
 
 		ChannelFuture future = e.getChannel().write(response);
 
-	
 		if (!keepAlive) {
 			future.addListener(ChannelFutureListener.CLOSE);
 		}
@@ -140,7 +136,7 @@ public class HessianProtocolHandler extends SimpleChannelUpstreamHandler {
 		}
 		ChannelFuture future = e.getChannel().write(response);
 		boolean keepAlive = isKeepAlive(request);
-		
+
 		if (!keepAlive) {
 			future.addListener(ChannelFutureListener.CLOSE);
 		}
@@ -167,83 +163,87 @@ public class HessianProtocolHandler extends SimpleChannelUpstreamHandler {
 	 * Execute a request. The path-info of the request selects the bean. Once
 	 * the bean's selected, it will be applied.
 	 */
-	public void service(String servicName,HttpRequest req, HttpResponse res,
-			ByteArrayOutputStream os) throws IOException {
-		try {
-			byte[] bytes = req.getContent().array();
-			InputStream is = new ByteArrayInputStream(bytes);
+	public void service(String servicName, HttpRequest req, HttpResponse res,
+			ByteArrayOutputStream os) {
+		byte[] bytes = req.getContent().array();
+		InputStream is = new ByteArrayInputStream(bytes);
 
-			SerializerFactory serializerFactory = getSerializerFactory();
-			String username=null;
-			String password=null;
-			String[] authLink=getUsernameAndPassword(req);
-			username=authLink[0];
-			password=authLink[1];
-			invoke(username,password,servicName,is, os, serializerFactory);
-		} catch (Exception e) {
-			e.printStackTrace();
-		} finally {
-
-		}
+		SerializerFactory serializerFactory = getSerializerFactory();
+		String username = null;
+		String password = null;
+		String[] authLink = getUsernameAndPassword(req);
+		username = authLink[0];
+		password = authLink[1];
+		invoke(username, password, servicName, is, os, serializerFactory);
 	}
-	
-	private String[] getUsernameAndPassword(HttpRequest req){
-		String auths=request.getHeader("Authorization");
-		String auth[] =auths.split(" ");
-		String bauth=auth[1];
-		String dauth=new String(Base64.decodeBase64(bauth));
-		String authLink[]=dauth.split(":");
+
+	private String[] getUsernameAndPassword(HttpRequest req) {
+		String auths = request.getHeader("Authorization");
+		String auth[] = auths.split(" ");
+		String bauth = auth[1];
+		String dauth = new String(Base64.decodeBase64(bauth));
+		String authLink[] = dauth.split(":");
 		return authLink;
 	}
 
-	protected void invoke(String username,String password,String sname,InputStream is, OutputStream os,
-			SerializerFactory serializerFactory) throws Exception {
-		HessianInputFactory.HeaderType header = _inputFactory.readHeader(is);
-
-		AbstractHessianInput in;
-		AbstractHessianOutput out;
-
-		switch (header) {
-		case CALL_1_REPLY_1:
-			in = _hessianFactory.createHessianInput(is);
-			out = _hessianFactory.createHessianOutput(os);
-			break;
-
-		case CALL_1_REPLY_2:
-			in = _hessianFactory.createHessianInput(is);
-			out = _hessianFactory.createHessian2Output(os);
-			break;
-
-		case HESSIAN_2:
-			in = _hessianFactory.createHessian2Input(is);
-			in.readCall();
-			out = _hessianFactory.createHessian2Output(os);
-			break;
-
-		default:
-			throw new IllegalStateException(header
-					+ " is an unknown Hessian call");
-		}
-
-		if (serializerFactory != null) {
-			in.setSerializerFactory(serializerFactory);
-			out.setSerializerFactory(serializerFactory);
-		}
-
+	protected void invoke(String username, String password, String sname,
+			InputStream is, OutputStream os, SerializerFactory serializerFactory) {
+		AbstractHessianInput in = null;
+		AbstractHessianOutput out = null;
 		try {
-			invoke(username,password,sname, in, out);
-		}  finally {
-		
+			HessianInputFactory.HeaderType header = _inputFactory
+					.readHeader(is);
+
+			switch (header) {
+			case CALL_1_REPLY_1:
+				in = _hessianFactory.createHessianInput(is);
+				out = _hessianFactory.createHessianOutput(os);
+				break;
+
+			case CALL_1_REPLY_2:
+				in = _hessianFactory.createHessianInput(is);
+				out = _hessianFactory.createHessian2Output(os);
+				break;
+
+			case HESSIAN_2:
+				in = _hessianFactory.createHessian2Input(is);
+				in.readCall();
+				out = _hessianFactory.createHessian2Output(os);
+				break;
+
+			default:
+				throw new IllegalStateException(header
+						+ " is an unknown Hessian call");
+			}
+
+			if (serializerFactory != null) {
+				in.setSerializerFactory(serializerFactory);
+				out.setSerializerFactory(serializerFactory);
+			}
+
+			invoke(username, password, sname, in, out);
+		} catch (Exception e) {
+			e.printStackTrace();
+			try {
+				out.writeFault("ServiceException", e.getMessage(), e);
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+		} finally {
+
+			try {
 				in.close();
 				out.close();
-			
-			
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 
 		}
 	}
 
-	public void invoke(String username,String password,String serviceName, AbstractHessianInput in,
-			AbstractHessianOutput out) throws Exception {
+	public void invoke(String username, String password, String serviceName,
+			AbstractHessianInput in, AbstractHessianOutput out)
+			throws Exception {
 		ServiceContext context = ServiceContext.getContext();
 
 		// backward compatibility for some frameworks that don't read
@@ -257,17 +257,16 @@ public class HessianProtocolHandler extends SimpleChannelUpstreamHandler {
 
 			context.addHeader(header, value);
 		}
-		ServiceMetaData smd=HessianServiceConfig.getServiceMetaData(serviceName);
-		
-		
+		ServiceMetaData smd = HessianServiceConfig
+				.getServiceMetaData(serviceName);
 
 		String methodName = in.readMethod();
 		int argLength = in.readMethodArgLength();
-		
+
 		Method method = smd.getMethod(methodName + "__" + argLength);
-		
-		if (method == null){
-		      method = smd.getMethod(methodName);
+
+		if (method == null) {
+			method = smd.getMethod(methodName);
 		}
 		Class<?>[] argTypes = method.getParameterTypes();
 		Object[] argObjs = new Object[argTypes.length];
@@ -276,17 +275,14 @@ public class HessianProtocolHandler extends SimpleChannelUpstreamHandler {
 		}
 
 		int timeout = 3000;
-		
-		
-		
-		/*byte[][] args=new byte[argObjs.length][];
-		for(int i=0;i<argObjs.length;i++){
-			args[i]=ProtocolUtils.encode(argObjs[i]);
-		}*/
+
+		/*
+		 * byte[][] args=new byte[argObjs.length][]; for(int
+		 * i=0;i<argObjs.length;i++){ args[i]=ProtocolUtils.encode(argObjs[i]);
+		 * }
+		 */
 		RequestWrapper rw = new RequestWrapper(username, password, serviceName,
 				method.getName(), argObjs, timeout);
-
-		
 
 		if (argLength != argObjs.length && argLength >= 0) {
 			out.writeFault("NoSuchMethod",
@@ -301,14 +297,14 @@ public class HessianProtocolHandler extends SimpleChannelUpstreamHandler {
 
 		try {
 			result = ServiceHandlerFactory.handleRequest(rw);
-			//result=ProtocolUtils.decode(bytes);
+			// result=ProtocolUtils.decode(bytes);
 		} catch (Exception e) {
 			Throwable e1 = e;
 			if (e1 instanceof InvocationTargetException)
 				e1 = ((InvocationTargetException) e).getTargetException();
 
 			log.debug(this + " " + e1.toString(), e1);
-
+			result = e;
 			out.writeFault("ServiceException", e1.getMessage(), e1);
 			out.close();
 			return;
@@ -322,7 +318,7 @@ public class HessianProtocolHandler extends SimpleChannelUpstreamHandler {
 
 		out.close();
 	}
-	
+
 	protected Hessian2Input createHessian2Input(InputStream is) {
 		return new Hessian2Input(is);
 	}
