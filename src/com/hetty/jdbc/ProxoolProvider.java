@@ -11,6 +11,7 @@ import java.util.Set;
 import org.logicalcobwebs.proxool.ProxoolException;
 import org.logicalcobwebs.proxool.ProxoolFacade;
 
+import com.hetty.jdbc.HConnection.Transaction;
 import com.hetty.plugin.Plugin;
 import com.hetty.server.HettyServer;
 import com.hetty.server.conf.ServerConfig;
@@ -42,7 +43,39 @@ public class ProxoolProvider implements Plugin, ConnectionProvider {
 		} catch (ProxoolException e) {
 			e.printStackTrace();
 		}
-
+		
+		HConnection cnn=DbUtils.getConnection();
+		Transaction tra=cnn.getTransaction();
+		
+		try {
+			tra.begin();
+			Statement smt=cnn.createStatement();
+			ResultSet rs=smt.executeQuery("select * from bcs_apps");
+			while(rs.next()){
+				String name=rs.getString("app_name");
+				System.out.println(name);
+			}
+			rs.close();
+			tra.end();
+			cnn.close();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		
+/*
+		Transaction tr=DbUtils.getTransacation();
+		
+		try {
+			tr.begin();
+			
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}*/
+		
+		
 		/*Connection cnn=this.getConnection();
 		try {
 			Statement smt=cnn.createStatement();
@@ -133,7 +166,7 @@ public class ProxoolProvider implements Plugin, ConnectionProvider {
 		}
 	}
 
-	public static Transaction getTransaction() {
+	/*public static Transaction getTransaction() {
 		Transaction tra=new Transaction();
 		return tra;
 	}
@@ -170,5 +203,5 @@ public class ProxoolProvider implements Plugin, ConnectionProvider {
 			}
 		}
 	}
-
+*/
 }
