@@ -28,4 +28,10 @@ public class Hello2Impl implements Hello {
 		}
 	}
 
+	@Override
+	public String getAppSecret(String key) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }
