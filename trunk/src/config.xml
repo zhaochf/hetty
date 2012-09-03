@@ -10,9 +10,9 @@
 			<provider version="1" class="test.BasicService" default="true" />
 		</service>
 		<service name="hello" interface="test.example.Hello">
-			<provider version="1" class="test.example.HelloImpl" />
+			<provider version="1" class="test.example.HelloImpl" default="true" />
 			<provider version="2" class="test.example.Hello2Impl"
-				default="true" />
+				/>
 		</service>
 
 		<!-- <service name="hello1" servers="127.0.0.1:8082" interface="test.example.Hello" 
