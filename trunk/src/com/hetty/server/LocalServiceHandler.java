@@ -1,8 +1,7 @@
 package com.hetty.server;
 
-import java.io.IOException;
-import java.io.Serializable;
 import java.util.Collection;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -13,10 +12,9 @@ import com.esotericsoftware.reflectasm.MethodAccess;
 import com.hetty.RequestWrapper;
 import com.hetty.object.AppServiceSecurity;
 import com.hetty.object.Application;
-import com.hetty.object.Service;
 import com.hetty.object.LocalService;
+import com.hetty.object.Service;
 import com.hetty.object.ServiceProvider;
-import com.hetty.protocol.ProtocolUtils;
 
 public class LocalServiceHandler implements ServiceHandler {
 	private final static Logger logger = LoggerFactory
@@ -24,6 +22,9 @@ public class LocalServiceHandler implements ServiceHandler {
 
 	private static Map<String, Map<String, MethodAccess>> cacheMethodAccess = new HashMap<String, Map<String, MethodAccess>>();
 
+	/**
+	 * according the request to invoke the method and return the invoke result
+	 */
 	@Override
 	public Object handleRequest(RequestWrapper request) {
 		String instanceName = request.getServiceName();
@@ -35,6 +36,7 @@ public class LocalServiceHandler implements ServiceHandler {
 		String appSecret = request.getAppSecret();
 		String requestVersion = getServiceVersion(appKey, appSecret,
 				instanceName);
+		
 		String versionValue = ServiceProvider.DEFAULT_VERSION
 				.equals(requestVersion) ? so.getDefaultProvider()
 				: requestVersion;
@@ -87,11 +89,17 @@ public class LocalServiceHandler implements ServiceHandler {
 			} else {
 				logger.warn("相同版本号的服务已经发布，请检查服务发布的版本是否跟原来的冲突！");
 			}
-
 		}
 
 	}
 
+	/**
+	 * check the app's secret and method priviledge,then get the version of request
+	 * @param appKey
+	 * @param appSecret
+	 * @param serviceName
+	 * @return
+	 */
 	private String getServiceVersion(String appKey, String appSecret,
 			String serviceName) {
 		Application app = HettyServer.getApplication(appKey);
