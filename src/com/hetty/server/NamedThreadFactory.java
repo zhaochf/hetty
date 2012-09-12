@@ -3,6 +3,7 @@ package com.hetty.server;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
+
 /**
  * Help for threadpool to set thread name
  * 
@@ -36,11 +37,27 @@ public class NamedThreadFactory implements ThreadFactory {
         Thread t = new Thread(group, r, namePrefix
                 + threadNumber.getAndIncrement(), 0);
         t.setDaemon(isDaemon);
+        t.setUncaughtExceptionHandler(new UncaughtExceptionHandler());
         if (t.getPriority() != Thread.NORM_PRIORITY) {
             t.setPriority(Thread.NORM_PRIORITY);
         }
         return t;
     }
+	/**
+	 * UncaughtExceptionHandler 多线程异常捕捉处理类
+	 *
+	 * @author <a href="mailto:zhuzhsh@gmail.com">Raymond Zhu</a>  
+	 * 
+	 */
+	static class UncaughtExceptionHandler implements Thread.UncaughtExceptionHandler{
 
+		@Override
+		public void uncaughtException(Thread t, Throwable e) {
+			throw new RuntimeException(e);
+			
+		}
+
+
+	}
 }
 
