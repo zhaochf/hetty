@@ -106,6 +106,8 @@ public class ProxoolProvider implements Plugin, ConnectionProvider {
 						e.printStackTrace();
 					} finally {
 						cnn = null;
+						localCount.set(null);
+						localConnection.set(null);
 					}
 				}
 

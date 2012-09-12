@@ -18,15 +18,19 @@ import java.sql.Statement;
 import java.sql.Struct;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class HConnection implements Connection {
 	private static ThreadLocal<Connection> localConnection = new ThreadLocal<Connection>();
 	private static ThreadLocal<Integer> localCount = new ThreadLocal<Integer>();
 	private static ThreadLocal<Integer> localTransaction = new ThreadLocal<Integer>();
 	private static String alias = "proxool.hetty";
-	private  HConnection(){
-		
+
+	private HConnection() {
+
 	}
+
 	@Override
 	public <T> T unwrap(Class<T> iface) throws SQLException {
 		Connection cnn = getConnection();
@@ -82,7 +86,7 @@ public class HConnection implements Connection {
 		int t = localTransaction.get();
 		t--;
 		localTransaction.set(t);
-		if (cnn != null && !cnn.getAutoCommit() && !cnn.isClosed()&&t==0) {
+		if (cnn != null && !cnn.getAutoCommit() && !cnn.isClosed() && t == 0) {
 			cnn.commit();
 		}
 
@@ -97,8 +101,6 @@ public class HConnection implements Connection {
 		}
 
 	}
-
-	
 
 	@Override
 	public void close() throws SQLException {
@@ -365,52 +367,74 @@ public class HConnection implements Connection {
 		return tra;
 	}
 
-	public static void closeConnection() {
+	public void closeConnection() {
 		Connection cnn = localConnection.get();
 		if (cnn != null) {
-			synchronized (cnn) {
-				if(localCount.get()==null){
-					return ;
+			Long tid = Thread.currentThread().getId();
+			synchronized (tid) {
+				if (localCount.get() == null) {
+					return;
 				}
 				int c = localCount.get();
-				if (c > 1) {
+				if (c > 0) {
 					c--;
-					localCount.set(c);
-				} else {
+
+				}
+
+				if (c == 0) {
+
 					try {
 						if (!cnn.isClosed()) {
 							cnn.close();
+							/*System.out.println("Thread ["
+									+ Thread.currentThread().getName()
+									+ "] 关闭连接");*/
 						}
 					} catch (SQLException e) {
 						e.printStackTrace();
+						try {
+							if (cnn != null && !cnn.isClosed()) {
+								cnn.close();
+							}
+						} catch (SQLException e1) {
+							e1.printStackTrace();
+						}
 					} finally {
-						cnn = null;
+						if (cnn != null) {
+							cnn = null;
+						}
+						localCount.set(null);
+						localConnection.set(null);
 					}
-					localConnection.set(null);
+				}else{
+					localCount.set(c);
 				}
 
 			}
 		}
 	}
-	
 
-	private static Connection getConnection(){
+	private static Connection getConnection() {
 		Connection cnn = localConnection.get();
-		if(cnn==null){
-			synchronized (localConnection) {
-				if(localConnection.get()==null){
-					try {
+		try {
+			if (cnn == null || cnn.isClosed()) {
+				Long tid = Thread.currentThread().getId();
+				synchronized (tid) {
+					/*System.out.println("Thread ["
+							+ Thread.currentThread().getName() + "] 获取连接");*/
+					if (localConnection.get() == null) {
 						cnn = DriverManager.getConnection(alias);
 						localConnection.set(cnn);
-					} catch (SQLException e) {
-						e.printStackTrace();
+
 					}
 				}
 			}
+		} catch (SQLException e) {
+			e.printStackTrace();
 		}
 		return cnn;
 	}
-	
+
 	public static HConnection getInstance() {
 		if (localCount.get() == null) {
 			localCount.set(1);
@@ -421,6 +445,7 @@ public class HConnection implements Connection {
 		}
 		return new HConnection();
 	}
+
 	public static class Transaction {
 		public void begin() throws SQLException {
 			Connection cnn = getConnection();
@@ -434,7 +459,6 @@ public class HConnection implements Connection {
 				t++;
 				localTransaction.set(t);
 			}
-
 		}
 
 		public void end() throws SQLException {
@@ -442,12 +466,19 @@ public class HConnection implements Connection {
 			int t = localTransaction.get();
 			t--;
 			localTransaction.set(t);
-			if (cnn != null && !cnn.getAutoCommit() && !cnn.isClosed()&&t==0) {
-					cnn.commit();
-					cnn.setAutoCommit(false);
+			if (cnn != null && !cnn.getAutoCommit() && !cnn.isClosed()
+					&& t == 0) {
+				localTransaction.set(null);
+				cnn.commit();
+				cnn.setAutoCommit(true);
 			}
 
 		}
+	}
+
+	public static void main(String[] args) {
+		ExecutorService es = Executors.newFixedThreadPool(1);
+		es.shutdownNow();
 	}
 
 }
