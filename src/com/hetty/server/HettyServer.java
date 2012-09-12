@@ -42,7 +42,6 @@ public class HettyServer {
 
 	private int methodTimeout = 3000;
 
-	private String configFile = null;
 
 	public HettyServer(String configFile) {
 
@@ -55,13 +54,9 @@ public class HettyServer {
 				.getProperty("hetty.tcp.nodelay", "true")));
 		bootstrap.setOption("reuseAddress", Boolean.parseBoolean(ServerConfig.getInstance()
 				.getProperty("hetty.tcp.reuseaddress", "true")));
-		this.configFile = configFile;
 
 	}
 
-	public void setConfigFile(String configFile) {
-		this.configFile = configFile;
-	}
 
 	public HettyServer() {
 		this("server.properties");
@@ -223,7 +218,13 @@ public class HettyServer {
 		HettyServer server = new HettyServer(config);
 
 		ThreadFactory tf = new NamedThreadFactory("hetty-");
-		ExecutorService threadPool = new ThreadPoolExecutor(20, 100, 3000,
+		String coreSizeString=ServerConfig.getInstance().getProperty("server.thread.corePoolSize", "4");
+		String maxSizeString=ServerConfig.getInstance().getProperty("server.thread.maxPoolSize", "16");
+		String keepAliveTimeString=ServerConfig.getInstance().getProperty("server.thread.keepAliveTime", "3000");
+		int coreSize=Integer.parseInt(coreSizeString);
+		int maxSize=Integer.parseInt(maxSizeString);
+		int keepAlive=Integer.parseInt(keepAliveTimeString);
+		ExecutorService threadPool = new ThreadPoolExecutor(coreSize, maxSize, keepAlive,
 				TimeUnit.SECONDS, new SynchronousQueue<Runnable>(), tf);
 		// 启动服务器
 		try {
