@@ -28,10 +28,9 @@ public class RequestWrapper implements Serializable {
 	}
 
 	public RequestWrapper(String appKey, String appSecret, String serviceName,
-			String methodName/* ,Class[] argTypes */,Object[] args, int timeout) {
+			String methodName,Object[] args, int timeout) {
 		this.serviceName = serviceName;
 		this.methodName = methodName;
-		// this.argTypes=argTypes;
 		this.args = args;
 		this.timeout = timeout;
 		this.appKey = appKey;
@@ -57,12 +56,6 @@ public class RequestWrapper implements Serializable {
 	public void setMethodName(String methodName) {
 		this.methodName = methodName;
 	}
-
-	/*
-	 * public Class[] getArgTypes() { return argTypes; }
-	 * 
-	 * public void setArgTypes(Class[] argTypes) { this.argTypes = argTypes; }
-	 */
 
 	public Object[] getArgs() {
 		return args;

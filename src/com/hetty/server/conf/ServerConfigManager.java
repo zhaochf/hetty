@@ -9,6 +9,12 @@ import com.hetty.object.Service;
 import com.hetty.plugin.Plugin;
 import com.hetty.server.HettyServer;
 
+/**
+ * a plugin to read the service config,the client application config(privilege),the client's invoke service(privilege)
+ * 
+ * @author guolei
+ *
+ */
 public class ServerConfigManager implements Plugin{
 	
 	private final static Map<String,Application> applicationMap=new HashMap<String, Application>();
@@ -37,16 +43,13 @@ public class ServerConfigManager implements Plugin{
 		app.setMethodTimeout(sc.getMethodTimeout());
 		app.setName(sc.getServerName());
 		
-		//.parseCurrentApp(server);
 		HettyServer.setCurrentApp(app);
-		
 		
 		List<Service> serviceList=cp.parseService();
 		for(Service bs:serviceList){
 			server.registerService(bs);
 		}
 		
-		ServerConfig.getInstance();
 		List<Application> appList=cp.parseApplication();
 		for(Application a:appList){
 			server.addApplication(a);
@@ -58,8 +61,6 @@ public class ServerConfigManager implements Plugin{
 				server.addAppServiceSecurity((AppServiceSecurity)o);
 			}
 		}
-		
-	
 	}
 	
 	public void stop() {

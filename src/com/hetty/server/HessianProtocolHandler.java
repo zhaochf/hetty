@@ -165,7 +165,7 @@ public class HessianProtocolHandler extends SimpleChannelUpstreamHandler {
 	 */
 	public void service(String servicName, HttpRequest req, HttpResponse res,
 			ByteArrayOutputStream os) {
-		byte[] bytes = req.getContent().array();
+		byte[] bytes = req.getContent().array();//get request content
 		InputStream is = new ByteArrayInputStream(bytes);
 
 		SerializerFactory serializerFactory = getSerializerFactory();
@@ -276,11 +276,7 @@ public class HessianProtocolHandler extends SimpleChannelUpstreamHandler {
 
 		int timeout = 3000;
 
-		/*
-		 * byte[][] args=new byte[argObjs.length][]; for(int
-		 * i=0;i<argObjs.length;i++){ args[i]=ProtocolUtils.encode(argObjs[i]);
-		 * }
-		 */
+		//wrap the request to a wapper
 		RequestWrapper rw = new RequestWrapper(username, password, serviceName,
 				method.getName(), argObjs, timeout);
 
@@ -296,8 +292,8 @@ public class HessianProtocolHandler extends SimpleChannelUpstreamHandler {
 		Object result = null;
 
 		try {
+			//handle request
 			result = ServiceHandlerFactory.handleRequest(rw);
-			// result=ProtocolUtils.decode(bytes);
 		} catch (Exception e) {
 			Throwable e1 = e;
 			if (e1 instanceof InvocationTargetException)
@@ -333,31 +329,5 @@ public class HessianProtocolHandler extends SimpleChannelUpstreamHandler {
 		// Close the connection as soon as the error message is sent.
 		ctx.getChannel().write(response)
 				.addListener(ChannelFutureListener.CLOSE);
-	}
-
-	@Override
-	public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
-			throws Exception {
-		HttpResponse response = new DefaultHttpResponse(HTTP_1_1,
-				HttpResponseStatus.INTERNAL_SERVER_ERROR);
-		response.setHeader(CONTENT_TYPE, "text/html; charset=UTF-8");
-		StringBuilder sb = new StringBuilder();
-		sb.append("<b>500 Server Error!</b><hr>");
-		String msg = e.getCause().getMessage();
-		StackTraceElement[] ste = e.getCause().getStackTrace();
-		sb.append(msg);
-		sb.append("<br>");
-		for (StackTraceElement es : ste) {
-			sb.append(es.toString() + "<br>");
-		}
-		response.setContent(ChannelBuffers.copiedBuffer(sb.toString(),
-				CharsetUtil.UTF_8));
-
-		// Close the connection as soon as the error message is sent.
-		ctx.getChannel().write(response)
-				.addListener(ChannelFutureListener.CLOSE);
-
-		e.getCause().printStackTrace();
-		e.getChannel().close();
 	}
 }
