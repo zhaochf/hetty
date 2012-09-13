@@ -21,7 +21,6 @@ import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
@@ -172,13 +171,17 @@ public class HessianProtocolHandler extends SimpleChannelUpstreamHandler {
 		String username = null;
 		String password = null;
 		String[] authLink = getUsernameAndPassword(req);
-		username = authLink[0];
-		password = authLink[1];
+		username = authLink[0].equals("")?null:authLink[0];
+		password = authLink[1].equals("")?null:authLink[1];
 		invoke(username, password, servicName, is, os, serializerFactory);
 	}
 
 	private String[] getUsernameAndPassword(HttpRequest req) {
 		String auths = request.getHeader("Authorization");
+		if(auths == null){
+			String str[] = {"",""};
+			return str;
+		}
 		String auth[] = auths.split(" ");
 		String bauth = auth[1];
 		String dauth = new String(Base64.decodeBase64(bauth));
@@ -190,7 +193,12 @@ public class HessianProtocolHandler extends SimpleChannelUpstreamHandler {
 			InputStream is, OutputStream os, SerializerFactory serializerFactory) {
 		AbstractHessianInput in = null;
 		AbstractHessianOutput out = null;
+		
+		
+		
+		
 		try {
+			
 			HessianInputFactory.HeaderType header = _inputFactory
 					.readHeader(is);
 
@@ -221,6 +229,12 @@ public class HessianProtocolHandler extends SimpleChannelUpstreamHandler {
 				out.setSerializerFactory(serializerFactory);
 			}
 
+			if(username == null || password == null){
+				Exception exception = new RuntimeException("the client can't offer the user or password infor,please check.");
+				out.writeFault("ServiceException",exception.getMessage(),exception);
+				log.error("the client can't offer the user or password infor,now we have refused.");
+				throw exception;
+			}
 			invoke(username, password, sname, in, out);
 		} catch (Exception e) {
 			e.printStackTrace();

@@ -1,6 +1,7 @@
 package com.hetty.server;
 
 import java.util.concurrent.ThreadFactory;
+
 import java.util.concurrent.atomic.AtomicInteger;
 
 
@@ -54,10 +55,7 @@ public class NamedThreadFactory implements ThreadFactory {
 		@Override
 		public void uncaughtException(Thread t, Throwable e) {
 			throw new RuntimeException(e);
-			
 		}
-
-
 	}
 }
 
