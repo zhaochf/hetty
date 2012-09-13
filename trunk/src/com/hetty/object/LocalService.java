@@ -7,15 +7,15 @@ public class LocalService extends Service {
 
 	private static final long serialVersionUID = -7977353532368464473L;
 
-	public final static int SCOPE_SINGETON=1;
-	public final static int SCOPE_PROTOTYPE=2;
+	public final static int SCOPE_SINGETON = 1;
+	public final static int SCOPE_PROTOTYPE = 2;
 	
-	private int scope=SCOPE_SINGETON;
+	private int scope = SCOPE_SINGETON;
 	
 	private String defaultVersion;
 	
-	
-	private Map<String,ServiceProvider> serviceProviderMap =new HashMap<String, ServiceProvider>();
+	//key:version value:ServiceProvider
+	private Map<String,ServiceProvider> serviceProviderMap = new HashMap<String, ServiceProvider>();
 	
 	public LocalService(){
 		
@@ -66,6 +66,11 @@ public class LocalService extends Service {
 	public void addDefaultVersion(String vid,Class<?> cls){
 		addProvider(vid,cls,true);
 	}
+	/**
+	 * put the version to the map and set the provider's version as default version
+	 * @param sv
+	 * @param defaultV
+	 */
 	public void addProvider(ServiceProvider sv,boolean defaultV){
 		String v=sv.getVersion();
 		if(!serviceProviderMap.containsKey(v)){
@@ -78,8 +83,12 @@ public class LocalService extends Service {
 	public void addDefaultVersion(ServiceProvider sv){
 		addProvider(sv,true);
 	}
+	/**
+	 * put the version and ServiceProvider to map
+	 * @param sv
+	 */
 	public void addProvider(ServiceProvider sv){
-		String v=sv.getVersion();
+		String v = sv.getVersion();
 		if(!serviceProviderMap.containsKey(v)){
 			serviceProviderMap.put(v, sv);
 		}

@@ -29,8 +29,9 @@ public class XmlConfigParser implements ConfigParser {
 
 
 
-	/* (non-Javadoc)
-	 * @see com.hxrainbow.bcs.server.ConfigParser#parseService()
+	/**
+	 * analyse service configure and return a list,the list is a LocalService and each service 
+	 * corresponding a service
 	 */
 	@Override
 	@SuppressWarnings("unchecked")
@@ -48,8 +49,6 @@ public class XmlConfigParser implements ConfigParser {
 				String interfaceStr = serviceNode.attributeValue("interface");
 				Class<?> type = Class.forName(interfaceStr);
 
-				String servers = serviceNode.attributeValue("servers");
-				if (servers == null) {
 					LocalService ls = new LocalService("" + i, name);
 					ls.setTypeClass(type);
 					List<Element> versionList = serviceNode
@@ -60,15 +59,13 @@ public class XmlConfigParser implements ConfigParser {
 						String isDefault = ve.attributeValue("default");
 						Class<?> pclass = Class.forName(processor);
 						ServiceProvider sv = new ServiceProvider(vname, pclass);
-						if (isDefault != null
-								&& "true".equals(isDefault.trim())) {
+						if (isDefault != null&& "true".equals(isDefault.trim())) {
 							ls.addDefaultVersion(sv);
 						} else {
 							ls.addProvider(sv);
 						}
 					}
-					slist.add(ls);
-				} 
+				slist.add(ls);
 				i++;
 
 			}
@@ -80,8 +77,8 @@ public class XmlConfigParser implements ConfigParser {
 	}
 
 	
-	/* (non-Javadoc)
-	 * @see com.hxrainbow.bcs.server.ConfigParser#parseApplication()
+	/**
+	 * 
 	 */
 	@Override
 	@SuppressWarnings("unchecked")
@@ -103,11 +100,13 @@ public class XmlConfigParser implements ConfigParser {
 		return alist;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.hxrainbow.bcs.server.ConfigParser#parseSecurity()
+	
+	
+	/**
+	 * get the config xml's security info
 	 */
-	@Override
 	@SuppressWarnings("unchecked")
+	@Override
 	public List<Object> parseSecurity() {
 		List<Object> olist = new LinkedList<Object>();
 		Element aroot = getRoot();
@@ -168,10 +167,4 @@ public class XmlConfigParser implements ConfigParser {
 				.getResourceAsStream(file);
 		return is;
 	}
-
-	public static void main(String[] args) {
-		ConfigParser cp = new XmlConfigParser("config.xml");
-		//cp.parseMessage();
-	}
-
 }

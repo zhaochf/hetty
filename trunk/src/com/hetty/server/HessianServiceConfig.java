@@ -7,7 +7,11 @@ import java.util.Set;
 import com.hetty.object.Service;
 import com.hetty.plugin.Plugin;
 
-
+/**
+ * 
+ * put the service info to map
+ *
+ */
 public class HessianServiceConfig  implements Plugin{
 
 	private static Map<String, ServiceMetaData> hessianServiceMetaMap = new HashMap<String, ServiceMetaData>();
