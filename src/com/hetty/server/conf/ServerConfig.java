@@ -21,6 +21,10 @@ public class ServerConfig {
 	private ServerConfig() {
 
 	}
+	/**
+	 * get the plugin list which have configured in the server config file
+	 * @return config class List
+	 */
 	public List<Class<?>> getPluginClassList() {
 		
 		Set<String> keySet = config.stringPropertyNames();
@@ -36,6 +40,7 @@ public class ServerConfig {
 					list.add(cls1);
 				} catch (Exception e) {
 					e.printStackTrace();
+					throw new RuntimeException(e);
 				}
 			}
 		}
@@ -43,72 +48,100 @@ public class ServerConfig {
 	}
 	
 
+	/**
+	 * get server key
+	 * @return server key
+	 */
 	public String getServerKey() {
 		String serverKey = config.getProperty("server.key");
 		if (serverKey == null) {
-			throw new RuntimeException("server.key 没有设置！");
+			throw new RuntimeException("we cannot find the server.key,please check and add.");
 		}
 		return serverKey;
 	}
 
+	/**
+	 * get server secret
+	 * @return server secret
+	 */
 	public String getServerSecret() {
 		String serverSecret = config.getProperty("server.secret");
 		if (serverSecret == null) {
-			throw new RuntimeException("server.secret 没有设置！");
+			throw new RuntimeException("we cannot find the server.secret,please check and add.");
 		}
 		return serverSecret;
 	}
 
+	/**
+	 * get the service config file,default is config.xml
+	 * @return
+	 */
 	public String getConfigFile() {
 		String f = config.getProperty("config.file", "config.xml");
 		return f;
 	}
 
+	/**
+	 * get the server's name
+	 * @return server name
+	 */
 	public String getServerName() {
 		String hostname = null;
 		try {
 			hostname = InetAddress.getLocalHost().getHostName();
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
+			throw new RuntimeException("we cannot get the server's hostName.");
 		}
 		return config.getProperty("server.name", hostname);
 	}
 
+	/**
+	 * get the server's connect timeout,default is 3s
+	 * @return
+	 */
 	public int getConnectionTimeout() {
 		String timeOutStr = config.getProperty("server.connection.timeout",
 				"3000");
 		return Integer.parseInt(timeOutStr);
 	}
 
+	/**
+	 * get the method's invoke timeout,default is 3s
+	 * @return
+	 */
 	public int getMethodTimeout() {
 		String timeOutStr = config.getProperty("server.method.timeout", "3000");
 		return Integer.parseInt(timeOutStr);
 	}
 
-	public String getHost() {
-		String hostname = null;
-		try {
-			hostname = InetAddress.getLocalHost().getHostName();
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-		}
-		return config.getProperty("server.host", hostname);
-	}
-
+	/**
+	 * get the server's port,default is 8080
+	 * @return
+	 */
 	public int getPort() {
 		String port = config.getProperty("server.port", "8080");
 		return Integer.parseInt(port);
 	}
 
-
-	public static ServerConfig getInstance() {
+	/**
+	 * get the instance of serverConfig and pop the config into instance's config value
+	 * @param fileName
+	 * @return
+	 */
+	public static ServerConfig  getInstance(String fileName){
+		return getInstance().loadProperties(fileName);
+	}
+	
+	
+	public  static ServerConfig getInstance() {
 		if (_instance == null) {
 			_instance = new ServerConfig();
 		}
 		return _instance;
 	}
 
-	public ServerConfig loadProperties(String file) {
+	public   ServerConfig loadProperties(String file) {
 		_instance.loadConfig(file);
 		return _instance;
 	}
@@ -125,7 +158,11 @@ public class ServerConfig {
 		return config;
 	}
 
-	protected void loadConfig(String file) {
+	/**
+	 * load the server config file to config properties  
+	 * @param file config file name
+	 */
+	private void loadConfig(String file) {
 		ClassLoader cl = Thread.currentThread().getContextClassLoader();
 		InputStream is = cl.getResourceAsStream(file);
 		try {

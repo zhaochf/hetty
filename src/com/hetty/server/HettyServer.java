@@ -42,9 +42,12 @@ public class HettyServer {
 
 	private int methodTimeout = 3000;
 
+	private String serviceConfigFile = null;
 
 	public HettyServer(String configFile) {
 
+		serviceConfigFile = configFile;
+		
 		ThreadFactory serverBossTF = new NamedThreadFactory("HETTY-BOSS-");
 		ThreadFactory serverWorkerTF = new NamedThreadFactory("HETTY-WORKER-");
 		bootstrap = new ServerBootstrap(new NioServerSocketChannelFactory(
@@ -76,9 +79,7 @@ public class HettyServer {
 			return;
 		}
 		
-		ServerConfig sc=ServerConfig.getInstance();
-		
-		sc.loadProperties("server.properties");
+		ServerConfig sc=ServerConfig.getInstance(serviceConfigFile);
 		
 		Plugin scm = new ServerConfigManager();
 		this.registerPlugin(scm);
@@ -226,7 +227,7 @@ public class HettyServer {
 		int keepAlive=Integer.parseInt(keepAliveTimeString);
 		ExecutorService threadPool = new ThreadPoolExecutor(coreSize, maxSize, keepAlive,
 				TimeUnit.SECONDS, new SynchronousQueue<Runnable>(), tf);
-		// 启动服务器
+		// start server
 		try {
 			server.start(threadPool);
 		} catch (Exception e) {
