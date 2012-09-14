@@ -57,7 +57,6 @@ public class HettyServer {
 				.getProperty("hetty.tcp.nodelay", "true")));
 		bootstrap.setOption("reuseAddress", Boolean.parseBoolean(ServerConfig.getInstance()
 				.getProperty("hetty.tcp.reuseaddress", "true")));
-
 	}
 
 
@@ -65,6 +64,10 @@ public class HettyServer {
 		this("server.properties");
 	}
 
+	/**
+	 * start netty server
+	 * @throws Exception
+	 */
 	public void start() throws Exception {
 		ThreadFactory tf = new NamedThreadFactory("hetty-pool-");
 		int minSize = Runtime.getRuntime().availableProcessors();
@@ -74,6 +77,11 @@ public class HettyServer {
 		start(threadPool);
 	}
 
+	/**
+	 * start netty server with threadPool(used to invoke method)
+	 * @param threadPool
+	 * @throws Exception
+	 */
 	public void start(final ExecutorService threadPool) throws Exception {
 		if (!startFlag.compareAndSet(false, true)) {
 			return;
@@ -92,16 +100,13 @@ public class HettyServer {
 			p.start(this);
 		}
 
-		ServerBootstrap httpBootstrap = new ServerBootstrap(
-				new NioServerSocketChannelFactory(
-						Executors.newCachedThreadPool(),
-						Executors.newCachedThreadPool()));
-		httpBootstrap.setPipelineFactory(new HessianChannelPipelineFactory(
+		
+		bootstrap.setPipelineFactory(new HessianChannelPipelineFactory(
 				threadPool));
 
 		port = sc.getPort();
 
-		httpBootstrap.bind(new InetSocketAddress(port));
+		bootstrap.bind(new InetSocketAddress(port));
 		logger.info("Server started,http listen at: " + port);
 
 	}
