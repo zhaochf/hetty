@@ -9,7 +9,11 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
-
+/**
+ * a kit for reading the server config,default is server.properties
+ * @author guolei
+ *
+ */
 public class ServerConfig {
 	private static Properties config = new Properties();
 	private static ServerConfig _instance;
@@ -129,6 +133,13 @@ public class ServerConfig {
 		} catch (IOException e) {
 			e.printStackTrace();
 			throw new RuntimeException(e);
+		}finally{
+			try {
+				is.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+				throw new RuntimeException("close the inputstream failed.");
+			}
 		}
 	}
 }
