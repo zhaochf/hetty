@@ -33,10 +33,10 @@ public class ServerConfigManager implements Plugin{
 	}
 	
 	public void start(HettyServer server) {
-		ServerConfig sc=ServerConfig.getInstance().loadProperties(configFile);
-		String xmlfile=sc.getConfigFile();
-		ConfigParser cp=new XmlConfigParser(xmlfile);
-		Application app=new Application();
+		ServerConfig sc = ServerConfig.getInstance(configFile);
+		String xmlfile = sc.getConfigFile();
+		ConfigParser cp = new XmlConfigParser(xmlfile);
+		Application app = new Application();
 		app.setKey(sc.getServerKey());
 		app.setSecret(sc.getServerSecret());
 		app.setConnectionTimeout(sc.getConnectionTimeout());
@@ -64,7 +64,6 @@ public class ServerConfigManager implements Plugin{
 	}
 	
 	public void stop() {
-		
 		
 	}
 	

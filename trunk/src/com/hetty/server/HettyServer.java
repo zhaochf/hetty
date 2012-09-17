@@ -89,7 +89,7 @@ public class HettyServer {
 		
 		ServerConfig sc=ServerConfig.getInstance(serviceConfigFile);
 		
-		Plugin scm = new ServerConfigManager();
+		Plugin scm = new ServerConfigManager(serviceConfigFile);
 		this.registerPlugin(scm);
 		Plugin hsc = new HessianServiceConfig();
 		this.registerPlugin(hsc);
@@ -223,13 +223,14 @@ public class HettyServer {
 		}
 		HettyServer server = new HettyServer(config);
 
+		ServerConfig serverConfig = ServerConfig.getInstance();
+		
+		int coreSize = serverConfig.getServerCorePoolSize();
+		int maxSize = serverConfig.getServerMaximumPoolSize();
+		int keepAlive = serverConfig.getServerKeepAliveTime();
+		
 		ThreadFactory tf = new NamedThreadFactory("hetty-");
-		String coreSizeString=ServerConfig.getInstance().getProperty("server.thread.corePoolSize", "4");
-		String maxSizeString=ServerConfig.getInstance().getProperty("server.thread.maxPoolSize", "16");
-		String keepAliveTimeString=ServerConfig.getInstance().getProperty("server.thread.keepAliveTime", "3000");
-		int coreSize=Integer.parseInt(coreSizeString);
-		int maxSize=Integer.parseInt(maxSizeString);
-		int keepAlive=Integer.parseInt(keepAliveTimeString);
+		
 		ExecutorService threadPool = new ThreadPoolExecutor(coreSize, maxSize, keepAlive,
 				TimeUnit.SECONDS, new SynchronousQueue<Runnable>(), tf);
 		// start server
