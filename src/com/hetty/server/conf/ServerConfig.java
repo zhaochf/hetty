@@ -125,6 +125,30 @@ public class ServerConfig {
 	}
 
 	/**
+	 * get the core number of threads
+	 * @return
+	 */
+	public int getServerCorePoolSize(){
+		String coreSize = config.getProperty("server.thread.corePoolSize", "4");
+		return Integer.parseInt(coreSize);
+	}
+	/**
+	 * get the maximum allowed number of threads
+	 * @return
+	 */
+	public int getServerMaximumPoolSize(){
+		String maxSize = config.getProperty("server.thread.maxPoolSize", "16");
+		return Integer.parseInt(maxSize);
+	}
+	/**
+	 * get the thread keep-alive time, which is the amount of time that threads in excess of the core pool size may remain idle before being terminated
+	 * @return
+	 */
+	public int getServerKeepAliveTime(){
+		String aleveTime = config.getProperty("server.thread.keepAliveTime", "3000");
+		return Integer.parseInt(aleveTime);
+	}
+	/**
 	 * get the instance of serverConfig and pop the config into instance's config value
 	 * @param fileName
 	 * @return
