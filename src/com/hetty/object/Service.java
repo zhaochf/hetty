@@ -6,8 +6,6 @@ public abstract class Service implements Serializable{
 
 	private static final long serialVersionUID = 2351769180636491630L;
 	
-	public final static int TYPE_LOCAL=0;
-	public final static int TYPE_REMOTE=1;
 	
 	protected Class<?> typeClass;
 	
@@ -45,8 +43,6 @@ public abstract class Service implements Serializable{
 	public void setName(String name) {
 		this.name = name;
 	}
-
-	public abstract int getType();
 
 	public Class<?> getTypeClass() {
 		return typeClass;

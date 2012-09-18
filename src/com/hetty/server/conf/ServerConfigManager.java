@@ -45,7 +45,7 @@ public class ServerConfigManager implements Plugin{
 		
 		HettyServer.setCurrentApp(app);
 		
-		List<Service> serviceList=cp.parseService();
+		List<Service> serviceList = cp.parseService();
 		for(Service bs:serviceList){
 			server.registerService(bs);
 		}

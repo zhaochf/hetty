@@ -1,5 +1,6 @@
 package com.hetty.server.conf;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -67,10 +68,10 @@ public class XmlConfigParser implements ConfigParser {
 					}
 				slist.add(ls);
 				i++;
-
 			}
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
+			throw new RuntimeException("read the service config file failured,please check.");
 		}
 
 		return slist;
@@ -141,19 +142,30 @@ public class XmlConfigParser implements ConfigParser {
 			}
 		} catch (DocumentException e) {
 			e.printStackTrace();
+		}catch(IOException e1){
+			e1.printStackTrace();
 		}
 		return null;
 	}
 
-	private Document getDocument() throws DocumentException {
-		if (document == null) {
-			SAXReader reader = new SAXReader();
-			reader.setValidation(false);
-			InputStream is = getFileStream();
-			if (is == null) {
-				throw new RuntimeException("没有找到配置文件 " + configFile);
+	private Document getDocument() throws DocumentException, IOException {
+		InputStream is = getFileStream();
+		try {
+			if (document == null) {
+				SAXReader reader = new SAXReader();
+				reader.setValidation(false);
+				if (is == null) {
+					throw new RuntimeException(
+							"we can not find the service config file:"
+									+ configFile);
+				}
+				document = reader.read(is);
 			}
-			document = reader.read(is);
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new RuntimeException("get xml Document failed.");
+		} finally {
+			is.close();
 		}
 		return document;
 	}

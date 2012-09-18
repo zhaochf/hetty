@@ -17,22 +17,18 @@ public class LocalService extends Service {
 	//key:version value:ServiceProvider
 	private Map<String,ServiceProvider> serviceProviderMap = new HashMap<String, ServiceProvider>();
 	
-	public LocalService(){
-		
-	}
-	
 	public LocalService(String id,String name){
 		super(id,name);
 	}
 	
-	@Override
-	public int getType() {
-		return Service.TYPE_LOCAL;
-	}
-	
-	public Class<?> getProcessorClass(int v) {
-		if(serviceProviderMap.containsKey(v)){
-			return serviceProviderMap.get(v).getProcessorClass();
+	/**
+	 * According to the version number get service information
+	 * @param version
+	 * @return
+	 */
+	public Class<?> getProcessorClass(int version) {
+		if(serviceProviderMap.containsKey(version)){
+			return serviceProviderMap.get(version).getProcessorClass();
 		}
 		throw new RuntimeException("该版本号不存在！");
 	}
