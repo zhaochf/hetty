@@ -87,7 +87,7 @@ public class HettyServer {
 			return;
 		}
 		
-		ServerConfig sc=ServerConfig.getInstance(serviceConfigFile);
+		ServerConfig sc = ServerConfig.getInstance(serviceConfigFile);
 		
 		Plugin scm = new ServerConfigManager(serviceConfigFile);
 		this.registerPlugin(scm);

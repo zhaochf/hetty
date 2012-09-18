@@ -56,9 +56,7 @@ public class ServiceHandlerFactory {
 	 */
 	public static void registerService(Service so) {
 		serviceObjectMap.put(so.getName(), so);
-		if(so.getType() == Service.TYPE_LOCAL){
-			LocalServiceHandler.publishService(so);
-		}
+		LocalServiceHandler.publishService(so);
 	}
 
 	public static Service getService(String name) {
