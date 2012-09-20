@@ -90,7 +90,10 @@ public class LocalService extends Service {
 			serviceProviderMap.put(v, sv);
 		}
 	}
-	
+	/**
+	 * get service providerMap
+	 * @return
+	 */
 	public Map<String,ServiceProvider> getServiceProviderMap(){
 		return Collections.unmodifiableMap(serviceProviderMap);
 	}
