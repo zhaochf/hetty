@@ -40,7 +40,7 @@ public class LocalServiceHandler implements ServiceHandler {
 		String versionValue = ServiceProvider.DEFAULT_VERSION
 				.equals(requestVersion) ? so.getDefaultProvider()
 				: requestVersion;
-		ServiceProvider sv = so.getVersion(versionValue);
+		ServiceProvider sv = so.getProviderByVersion(versionValue);
 		Class<?> processorClass = sv.getProcessorClass();
 		Object result = null;
 		try {
