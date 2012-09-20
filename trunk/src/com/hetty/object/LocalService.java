@@ -1,5 +1,6 @@
 package com.hetty.object;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,7 +31,7 @@ public class LocalService extends Service {
 		if(serviceProviderMap.containsKey(version)){
 			return serviceProviderMap.get(version).getProcessorClass();
 		}
-		throw new RuntimeException("该版本号不存在！");
+		throw new RuntimeException("the version does not exit");
 	}
 
 
@@ -91,11 +92,15 @@ public class LocalService extends Service {
 	}
 	
 	public Map<String,ServiceProvider> getServiceProviderMap(){
-		return serviceProviderMap;
+		return Collections.unmodifiableMap(serviceProviderMap);
 	}
-	
-	public ServiceProvider getVersion(String v){
-		return serviceProviderMap.get(v);
+	/**
+	 * according version to get provider which save in the map
+	 * @param version
+	 * @return
+	 */
+	public ServiceProvider getProviderByVersion(String version){
+		return serviceProviderMap.get(version);
 	}
 
 }
