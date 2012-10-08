@@ -45,10 +45,8 @@ public class NamedThreadFactory implements ThreadFactory {
         return t;
     }
 	/**
-	 * UncaughtExceptionHandler 多线程异常捕捉处理类
+	 * UncaughtExceptionHandler 
 	 *
-	 * @author <a href="mailto:zhuzhsh@gmail.com">Raymond Zhu</a>  
-	 * 
 	 */
 	static class UncaughtExceptionHandler implements Thread.UncaughtExceptionHandler{
 
