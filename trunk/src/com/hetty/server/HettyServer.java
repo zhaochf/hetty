@@ -64,18 +64,6 @@ public class HettyServer {
 		this("server.properties");
 	}
 
-	/**
-	 * start netty server
-	 * @throws Exception
-	 */
-	public void start() throws Exception {
-		ThreadFactory tf = new NamedThreadFactory("hetty-pool-");
-		int minSize = Runtime.getRuntime().availableProcessors();
-		int maxSize = minSize * 100;
-		ExecutorService threadPool = new ThreadPoolExecutor(minSize, maxSize,
-				3000, TimeUnit.SECONDS, new SynchronousQueue<Runnable>(), tf);
-		this.start(threadPool);
-	}
 
 	/**
 	 * start netty server with threadPool(used to invoke method)
