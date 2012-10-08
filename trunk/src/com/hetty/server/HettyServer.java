@@ -119,7 +119,7 @@ public class HettyServer {
 		String key = sb.toString();
 		AppServiceSecurity ass = appServiceSecurityMap.get(key);
 		if (ass == null) {
-			throw new RuntimeException("应用【" + appKey + "】没有权限访问:"
+			throw new RuntimeException("application 【" + appKey + "】does not have priviledge on "
 					+ serviceName);
 		}
 		return ass;
