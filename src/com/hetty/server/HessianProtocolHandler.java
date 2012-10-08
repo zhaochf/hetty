@@ -42,6 +42,7 @@ import com.caucho.hessian.io.SerializerFactory;
 import com.hetty.RequestWrapper;
 
 public class HessianProtocolHandler extends SimpleChannelUpstreamHandler {
+	
 	private final Logger log = LoggerFactory
 			.getLogger(HessianProtocolHandler.class);
 	private HttpRequest request;

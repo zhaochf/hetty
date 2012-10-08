@@ -54,13 +54,13 @@ public class LocalServiceHandler implements ServiceHandler {
 			result = method.invoke(processor, methodIndex, args);
 
 		} catch (InstantiationException e) {
-			e.printStackTrace();
+			logger.error(e.getMessage(),e);
 			throw new RuntimeException(e);
 		} catch (IllegalAccessException e) {
-			e.printStackTrace();
+			logger.error(e.getMessage(),e);
 			throw new RuntimeException(e);
 		} catch (IllegalArgumentException e) {
-			e.printStackTrace();
+			logger.error(e.getMessage(),e);
 			throw new RuntimeException(e);
 		}
 
@@ -107,7 +107,7 @@ public class LocalServiceHandler implements ServiceHandler {
 			String serviceName) {
 		Application app = HettyServer.getApplication(appKey);
 		if (!appSecret.equals(app.getSecret())) {
-			throw new RuntimeException("应用【" + appKey + "】密码错误！");
+			throw new RuntimeException("application【" + appKey + "】 has a wrong password！");
 		}
 		AppServiceSecurity ass = HettyServer.getAppServiceSecurity(appKey,
 				serviceName);
