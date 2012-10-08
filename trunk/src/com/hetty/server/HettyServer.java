@@ -219,7 +219,7 @@ public class HettyServer {
 		try {
 			server.start(threadPool);
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger.error(e.getMessage(),e);
 		}
 	}
 
