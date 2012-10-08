@@ -140,7 +140,7 @@ public class HettyServer {
 
 		Application app = applicationMap.get(key);
 		if (app == null) {
-			throw new RuntimeException("没有注册应用【" + key + "】");
+			throw new RuntimeException("we cannot find application 【" + key + "】");
 		}
 		return app;
 	}
