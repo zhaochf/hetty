@@ -95,7 +95,6 @@ public class HettyServer {
 
 		bootstrap.bind(new InetSocketAddress(port));
 		logger.info("Server started,http listen at: " + port);
-
 	}
 
 	public void addApplication(Application app) {

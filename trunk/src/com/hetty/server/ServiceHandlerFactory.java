@@ -4,6 +4,9 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 import com.hetty.RequestWrapper;
 import com.hetty.object.Service;
@@ -15,6 +18,9 @@ import com.hetty.object.Service;
  *
  */
 public class ServiceHandlerFactory {
+	
+	private final static Logger logger = LoggerFactory
+			.getLogger(ServiceHandlerFactory.class);
 	
 	//key:serviceName value:service
 	private final static Map<String, Service> serviceObjectMap = new ConcurrentHashMap<String, Service>();
@@ -53,7 +59,7 @@ public class ServiceHandlerFactory {
 			rw = handler.handleRequest(request);
 		}catch(Exception e){
 			rw = e;
-			e.printStackTrace();
+			logger.error(e.getMessage(),e);
 			throw e;
 		}
 		return rw;
