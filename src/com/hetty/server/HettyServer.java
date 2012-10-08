@@ -74,7 +74,7 @@ public class HettyServer {
 		int maxSize = minSize * 100;
 		ExecutorService threadPool = new ThreadPoolExecutor(minSize, maxSize,
 				3000, TimeUnit.SECONDS, new SynchronousQueue<Runnable>(), tf);
-		start(threadPool);
+		this.start(threadPool);
 	}
 
 	/**
@@ -94,9 +94,9 @@ public class HettyServer {
 		Plugin hsc = new HessianServiceConfig();
 		this.registerPlugin(hsc);
 		
-		List<Class<?>> pluginList=sc.getPluginClassList();
+		List<Class<?>> pluginList = sc.getPluginClassList();
 		for(Class<?> cls:pluginList){
-			Plugin p=(Plugin)cls.newInstance();
+			Plugin p = (Plugin)cls.newInstance();
 			p.start(this);
 		}
 
@@ -125,13 +125,7 @@ public class HettyServer {
 
 	public static AppServiceSecurity getAppServiceSecurity(String appKey,
 			String serviceName) {
-		/*
-		 * if(currentApp.getKey().equals(appKey)){ AppServiceSecurity ass=new
-		 * AppServiceSecurity(); ass.setApplicationKey(appKey);
-		 * ass.setServiceName(serviceName);
-		 * 
-		 * return ass; }
-		 */
+		
 		StringBuilder sb = new StringBuilder();
 		sb.append(appKey);
 		sb.append("_");

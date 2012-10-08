@@ -30,7 +30,7 @@ public class LocalServiceHandler implements ServiceHandler {
 		String instanceName = request.getServiceName();
 		String methodName = request.getMethodName();
 
-		LocalService so = (LocalService) ServiceHandlerFactory
+		LocalService localService = (LocalService) ServiceHandlerFactory
 				.getService(instanceName);
 		String appKey = request.getAppKey();
 		String appSecret = request.getAppSecret();
@@ -38,10 +38,10 @@ public class LocalServiceHandler implements ServiceHandler {
 				instanceName);
 		
 		String versionValue = ServiceProvider.DEFAULT_VERSION
-				.equals(requestVersion) ? so.getDefaultProvider()
+				.equals(requestVersion) ? localService.getDefaultProvider()
 				: requestVersion;
-		ServiceProvider sv = so.getProviderByVersion(versionValue);
-		Class<?> processorClass = sv.getProcessorClass();
+		ServiceProvider serviceProvider = localService.getProviderByVersion(versionValue);
+		Class<?> processorClass = serviceProvider.getProcessorClass();
 		Object result = null;
 		try {
 			Object processor = processorClass.newInstance();
@@ -56,7 +56,6 @@ public class LocalServiceHandler implements ServiceHandler {
 		} catch (InstantiationException e) {
 			e.printStackTrace();
 			throw new RuntimeException(e);
-
 		} catch (IllegalAccessException e) {
 			e.printStackTrace();
 			throw new RuntimeException(e);
@@ -68,6 +67,10 @@ public class LocalServiceHandler implements ServiceHandler {
 		return result;
 	}
 
+	/**
+	 * publish service to cacheMethodAccess map.map's key:instanceName,map's value:version map
+	 * @param so
+	 */
 	public static void publishService(Service so) {
 		String instanceName = so.getName();
 		LocalService lso = (LocalService) so;
@@ -87,7 +90,7 @@ public class LocalServiceHandler implements ServiceHandler {
 				MethodAccess ma = MethodAccess.get(instanceClass);
 				maccess.put(versionInt, ma);
 			} else {
-				logger.warn("相同版本号的服务已经发布，请检查服务发布的版本是否跟原来的冲突！");
+				logger.warn("a same version service has published,please check.");
 			}
 		}
 
