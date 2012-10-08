@@ -11,6 +11,8 @@ import org.dom4j.DocumentException;
 import org.dom4j.Element;
 import org.dom4j.Node;
 import org.dom4j.io.SAXReader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.hetty.object.AppServiceSecurity;
 import com.hetty.object.Application;
@@ -19,6 +21,9 @@ import com.hetty.object.Service;
 import com.hetty.object.ServiceProvider;
 
 public class XmlConfigParser implements ConfigParser {
+	
+	private final static Logger logger = LoggerFactory.getLogger(XmlConfigParser.class);
+	
 	private String configFile = null;
 	private Document document;
 	private Element root = null;
@@ -31,7 +36,7 @@ public class XmlConfigParser implements ConfigParser {
 
 
 	/**
-	 * analyse service configure and return a list,the list is a LocalService and each service 
+	 * analyse service configure and return a list,the list is a LocalService and each localService 
 	 * corresponding a service
 	 */
 	@Override
@@ -46,31 +51,31 @@ public class XmlConfigParser implements ConfigParser {
 
 			int i = 0;
 			for (Element serviceNode : serviceList) {
-				String name = serviceNode.attributeValue("name");
-				String interfaceStr = serviceNode.attributeValue("interface");
+				String name = serviceNode.attributeValue("name");// service name
+				String interfaceStr = serviceNode.attributeValue("interface");// interface package infor
+
 				Class<?> type = Class.forName(interfaceStr);
 
-					LocalService ls = new LocalService("" + i, name);
-					ls.setTypeClass(type);
-					List<Element> versionList = serviceNode
-							.selectNodes("provider");
-					for (Element ve : versionList) {
-						String vname = ve.attributeValue("version");
-						String processor = ve.attributeValue("class");
-						String isDefault = ve.attributeValue("default");
-						Class<?> pclass = Class.forName(processor);
-						ServiceProvider sv = new ServiceProvider(vname, pclass);
-						if (isDefault != null&& "true".equals(isDefault.trim())) {
-							ls.addDefaultVersion(sv);
-						} else {
-							ls.addProvider(sv);
-						}
+				LocalService ls = new LocalService("" + i, name);
+				ls.setTypeClass(type);
+				List<Element> versionList = serviceNode.selectNodes("provider");
+				for (Element element : versionList) {
+					String vname = element.attributeValue("version");
+					String processor = element.attributeValue("class");
+					String isDefault = element.attributeValue("default");
+					Class<?> pclass = Class.forName(processor);
+					ServiceProvider sv = new ServiceProvider(vname, pclass);
+					if (isDefault != null && "true".equals(isDefault.trim())) {
+						ls.addDefaultVersion(sv);
+					} else {
+						ls.addProvider(sv);
 					}
+				}
 				slist.add(ls);
 				i++;
 			}
 		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
+			logger.error(e.getMessage(),e);
 			throw new RuntimeException("read the service config file failured,please check.");
 		}
 

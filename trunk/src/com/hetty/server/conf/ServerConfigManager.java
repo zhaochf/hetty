@@ -32,6 +32,13 @@ public class ServerConfigManager implements Plugin{
 		}
 	}
 	
+	/**
+	 * 1.set HettyServer's currentApp
+	 * 2.put config xml's service infor into ServiceHandlerFactory's serviceObjectMap map
+	 * 3.put service method info into LocalServiceHandler's cacheMethodAccess map 
+	 * 4.put config xml's application info into HettyServer's applicationMap
+	 * 5.put config xml's security info into HettyServer's appServiceSecurityMap
+	 */
 	public void start(HettyServer server) {
 		ServerConfig sc = ServerConfig.getInstance(configFile);
 		String xmlfile = sc.getConfigFile();
