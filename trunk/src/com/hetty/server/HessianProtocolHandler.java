@@ -21,6 +21,7 @@ import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
@@ -55,6 +56,14 @@ public class HessianProtocolHandler extends SimpleChannelUpstreamHandler {
 	public HessianProtocolHandler(ExecutorService threadpool) {
 		this.threadpool = threadpool;
 	}
+	
+	@Override
+	public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
+			throws Exception {
+			if(!(e.getCause() instanceof IOException)){
+				log.error("catch some exception not IOException",e.getCause());
+			}
+		}
 
 	@Override
 	public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
@@ -104,7 +113,6 @@ public class HessianProtocolHandler extends SimpleChannelUpstreamHandler {
 
 			}
 		});
-
 	}
 
 	private void writeResponse(MessageEvent e, HttpResponse response,
@@ -193,9 +201,6 @@ public class HessianProtocolHandler extends SimpleChannelUpstreamHandler {
 			InputStream is, OutputStream os, SerializerFactory serializerFactory) {
 		AbstractHessianInput in = null;
 		AbstractHessianOutput out = null;
-		
-		
-		
 		
 		try {
 			
