@@ -87,7 +87,6 @@ public class HettyServer {
 			Plugin p = (Plugin)cls.newInstance();
 			p.start(this);
 		}
-
 		
 		bootstrap.setPipelineFactory(new HessianChannelPipelineFactory(
 				threadPool));
