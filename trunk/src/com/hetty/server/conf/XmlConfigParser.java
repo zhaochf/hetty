@@ -167,7 +167,7 @@ public class XmlConfigParser implements ConfigParser {
 				document = reader.read(is);
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger.error(e.getMessage(),e);
 			throw new RuntimeException("get xml Document failed.");
 		} finally {
 			is.close();

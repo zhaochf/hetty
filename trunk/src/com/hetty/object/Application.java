@@ -10,8 +10,8 @@ public class Application implements Serializable{
 	private String key;
 	private String secret;
 	
-	private int connectionTimeout=3000;
-	private int methodTimeout=3000;
+	private int connectionTimeout = 3000;
+	private int methodTimeout = 3000;
 	
 	public String getName() {
 		return name;
