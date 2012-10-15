@@ -14,6 +14,8 @@ import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import org.apache.commons.codec.binary.Base64;
 import org.jboss.netty.buffer.ChannelBuffer;
@@ -94,28 +96,40 @@ public class HessianProtocolHandler extends SimpleChannelUpstreamHandler {
 			final HttpRequest request, final HttpResponse response,
 			final ByteArrayOutputStream os, final MessageEvent e)
 			throws Exception {
-		threadpool.execute(new Runnable() {
-			@Override
-			public void run() {
-				try {
-					service(serviceName, request, response, os);
-				} catch (Exception e1) {
-					e1.printStackTrace();
-				}
+		
+		try {
+			threadpool.execute(new Runnable() {
+				@Override
+				public void run() {
+					try {
+						service(serviceName, request, response, os);
+					} catch (Exception e1) {
+						log.error(e1.getMessage(), e1);
+					}
 
-				if (HttpHeaders.is100ContinueExpected(request)) {
-					send100Continue(e);
-				}
-				if (request.isChunked()) {
-					readingChunks = true;
-				} else {
-					writeResponse(e, response, os);
-				}
+					if (HttpHeaders.is100ContinueExpected(request)) {
+						send100Continue(e);
+					}
+					if (request.isChunked()) {
+						readingChunks = true;
+					} else {
+						writeResponse(e, response, os);
+					}
 
-			}
-		});
+				}
+			});
+		} catch (RejectedExecutionException exception) {
+			log.error("server threadpool full,threadpool maxsize is:"
+					+ ((ThreadPoolExecutor) threadpool).getMaximumPoolSize());
+		}
 	}
 
+	/**
+	 * send response
+	 * @param e
+	 * @param response
+	 * @param os
+	 */
 	private void writeResponse(MessageEvent e, HttpResponse response,
 			ByteArrayOutputStream os) {
 

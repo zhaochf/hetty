@@ -47,7 +47,7 @@ public class HettyServer {
 	public HettyServer(String configFile) {
 
 		serviceConfigFile = configFile;
-		
+		ServerConfig.loadConfig(configFile);
 		ThreadFactory serverBossTF = new NamedThreadFactory("HETTY-BOSS-");
 		ThreadFactory serverWorkerTF = new NamedThreadFactory("HETTY-WORKER-");
 		bootstrap = new ServerBootstrap(new NioServerSocketChannelFactory(
@@ -75,7 +75,7 @@ public class HettyServer {
 			return;
 		}
 		
-		ServerConfig sc = ServerConfig.getInstance(serviceConfigFile);
+		ServerConfig sc = ServerConfig.getInstance();
 		
 		Plugin scm = new ServerConfigManager(serviceConfigFile);
 		this.registerPlugin(scm);

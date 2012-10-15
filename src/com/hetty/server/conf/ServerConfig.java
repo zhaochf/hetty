@@ -137,7 +137,7 @@ public class ServerConfig {
 	 * @return
 	 */
 	public int getServerMaximumPoolSize(){
-		String maxSize = config.getProperty("server.thread.maxPoolSize", "16");
+		String maxSize = config.getProperty("server.thread.maxPoolSize","16");
 		return Integer.parseInt(maxSize);
 	}
 	/**
@@ -148,15 +148,6 @@ public class ServerConfig {
 		String aleveTime = config.getProperty("server.thread.keepAliveTime", "3000");
 		return Integer.parseInt(aleveTime);
 	}
-	/**
-	 * get the instance of serverConfig and pop the config into instance's config value
-	 * @param fileName
-	 * @return
-	 */
-	public static ServerConfig  getInstance(String fileName){
-		return getInstance().loadProperties(fileName);
-	}
-	
 	
 	public  static ServerConfig getInstance() {
 		if (_instance == null) {
@@ -165,10 +156,6 @@ public class ServerConfig {
 		return _instance;
 	}
 
-	public   ServerConfig loadProperties(String file) {
-		_instance.loadConfig(file);
-		return _instance;
-	}
 
 	public String getProperty(String key) {
 		return config.getProperty(key);
@@ -186,7 +173,7 @@ public class ServerConfig {
 	 * load the server config file to config properties  
 	 * @param file config file name
 	 */
-	private void loadConfig(String file) {
+	public static void loadConfig(String file) {
 		ClassLoader cl = Thread.currentThread().getContextClassLoader();
 		InputStream is = cl.getResourceAsStream(file);
 		try {
