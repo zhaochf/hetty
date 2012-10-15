@@ -40,7 +40,7 @@ public class ServerConfigManager implements Plugin{
 	 * 5.put config xml's security info into HettyServer's appServiceSecurityMap
 	 */
 	public void start(HettyServer server) {
-		ServerConfig sc = ServerConfig.getInstance(configFile);
+		ServerConfig sc = ServerConfig.getInstance();
 		String xmlfile = sc.getConfigFile();
 		ConfigParser cp = new XmlConfigParser(xmlfile);
 		Application app = new Application();
